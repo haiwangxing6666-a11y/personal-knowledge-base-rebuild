@@ -35,3 +35,6 @@ app:
   chunk:
     max-chars: 500
     overlap-chars: 50
+  rag:
+    top-k: 5
+    similarity-threshold: 0.55
