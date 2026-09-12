@@ -6,6 +6,7 @@ import com.ithwx.personalknowledgebase.repository.DocumentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
@@ -18,6 +19,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -92,6 +94,46 @@ class DocumentManagementServiceTest {
         when(documentRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(NoSuchElementException.class, () -> service.get(99L));
+    }
+
+    @Test
+    void shouldUpdateDocument() {
+        DocumentEntity entity = document(1L, "旧名称");
+        entity.setFileType("web");
+        entity.setSourceUrl("https://example.com");
+        when(documentRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(ingestionService.replace(
+                entity, "新名称", "web", "https://example.com", "新正文"
+        )).thenReturn(entity);
+
+        assertSame(entity, service.update(1L, "新名称", "新正文"));
+    }
+
+    @Test
+    void shouldReplaceUploadedFile() throws Exception {
+        DocumentEntity entity = document(1L, "旧文件.txt");
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "新文件.MD", "text/markdown",
+                "# 新正文".getBytes(StandardCharsets.UTF_8)
+        );
+        when(documentRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(parserService.parse(file)).thenReturn("# 新正文");
+        when(ingestionService.replace(entity, "新文件.MD", "md", null, "# 新正文"))
+                .thenReturn(entity);
+
+        assertSame(entity, service.replaceFile(1L, file));
+    }
+
+    @Test
+    void shouldDeleteVectorsBeforeDocument() {
+        DocumentEntity entity = document(1L, "待删除资料");
+        when(documentRepository.findById(1L)).thenReturn(Optional.of(entity));
+
+        service.delete(1L);
+
+        InOrder order = inOrder(ingestionService, documentRepository);
+        order.verify(ingestionService).deleteVectors(1L);
+        order.verify(documentRepository).delete(entity);
     }
 
     private DocumentEntity document(Long id, String name) {

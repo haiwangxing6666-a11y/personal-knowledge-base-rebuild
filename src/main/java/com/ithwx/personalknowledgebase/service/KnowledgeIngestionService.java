@@ -4,6 +4,8 @@ import com.ithwx.personalknowledgebase.entity.DocumentEntity;
 import com.ithwx.personalknowledgebase.repository.DocumentRepository;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.filter.Filter;
+import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -39,11 +41,7 @@ public class KnowledgeIngestionService {
             String sourceUrl,
             String content
     ) {
-        if (name == null || name.isBlank()
-                || sourceType == null || sourceType.isBlank()
-                || content == null || content.isBlank()) {
-            throw new IllegalArgumentException("资料名称、类型和正文不能为空");
-        }
+        validate(name, sourceType, content);
 
         String contentHash = sha256(content);
         if (documentRepository.existsByContentHash(contentHash)) {
@@ -61,6 +59,43 @@ public class KnowledgeIngestionService {
         entity.setStatus("PROCESSING");
         entity = documentRepository.save(entity);
 
+        return storeVectors(entity, chunks);
+    }
+
+    public DocumentEntity replace(
+            DocumentEntity entity,
+            String name,
+            String sourceType,
+            String sourceUrl,
+            String content
+    ) {
+        validate(name, sourceType, content);
+
+        String contentHash = sha256(content);
+        if (documentRepository.existsByContentHashAndIdNot(contentHash, entity.getId())) {
+            throw new IllegalArgumentException("相同内容的资料已存在");
+        }
+
+        List<String> chunks = chunkingService.chunk(content);
+        vectorStore.delete(documentFilter(entity.getId()));
+
+        entity.setName(name.strip());
+        entity.setFileType(sourceType.strip().toLowerCase(Locale.ROOT));
+        entity.setSourceUrl(sourceUrl == null || sourceUrl.isBlank() ? null : sourceUrl.strip());
+        entity.setContent(content);
+        entity.setContentHash(contentHash);
+        entity.setStatus("PROCESSING");
+        entity.setChunkCount(0);
+        documentRepository.save(entity);
+
+        return storeVectors(entity, chunks);
+    }
+
+    public void deleteVectors(Long documentId) {
+        vectorStore.delete(documentFilter(documentId));
+    }
+
+    private DocumentEntity storeVectors(DocumentEntity entity, List<String> chunks) {
         try {
             vectorStore.add(toVectorDocuments(entity, chunks));
             entity.setStatus("READY");
@@ -70,6 +105,20 @@ public class KnowledgeIngestionService {
             entity.setStatus("FAILED");
             documentRepository.save(entity);
             throw exception;
+        }
+    }
+
+    private Filter.Expression documentFilter(Long documentId) {
+        return new FilterExpressionBuilder()
+                .eq("documentId", String.valueOf(documentId))
+                .build();
+    }
+
+    private void validate(String name, String sourceType, String content) {
+        if (name == null || name.isBlank()
+                || sourceType == null || sourceType.isBlank()
+                || content == null || content.isBlank()) {
+            throw new IllegalArgumentException("资料名称、类型和正文不能为空");
         }
     }
 

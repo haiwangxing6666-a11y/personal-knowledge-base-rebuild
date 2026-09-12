@@ -12,4 +12,6 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> 
     List<DocumentEntity> findAllByOrderByUploadTimeDesc();
 
     boolean existsByContentHash(String contentHash);
+
+    boolean existsByContentHashAndIdNot(String contentHash, Long id);
 }
