@@ -57,4 +57,30 @@ public class DocumentManagementService {
         return documentRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("资料不存在：" + id));
     }
+
+    public DocumentEntity update(Long id, String name, String content) {
+        DocumentEntity entity = get(id);
+        return ingestionService.replace(
+                entity,
+                name,
+                entity.getFileType(),
+                entity.getSourceUrl(),
+                content
+        );
+    }
+
+    public DocumentEntity replaceFile(Long id, MultipartFile file) throws IOException {
+        DocumentEntity entity = get(id);
+        String content = parserService.parse(file);
+        String filename = file.getOriginalFilename();
+        String fileType = filename.substring(filename.lastIndexOf('.') + 1)
+                .toLowerCase(Locale.ROOT);
+        return ingestionService.replace(entity, filename, fileType, null, content);
+    }
+
+    public void delete(Long id) {
+        DocumentEntity entity = get(id);
+        ingestionService.deleteVectors(id);
+        documentRepository.delete(entity);
+    }
 }

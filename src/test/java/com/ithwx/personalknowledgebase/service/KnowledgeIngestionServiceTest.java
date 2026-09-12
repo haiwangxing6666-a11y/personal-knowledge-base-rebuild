@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.filter.Filter;
 
 import java.util.List;
 
@@ -96,6 +97,46 @@ class KnowledgeIngestionServiceTest {
         assertEquals("相同内容的资料已存在", exception.getMessage());
         verify(documentRepository, never()).save(any(DocumentEntity.class));
         verifyNoInteractions(chunkingService, vectorStore);
+    }
+
+    @Test
+    void shouldReplaceOldVectors() {
+        stubRepositorySave();
+        DocumentEntity entity = new DocumentEntity();
+        entity.setId(1L);
+        entity.setName("旧资料");
+        entity.setFileType("note");
+        when(chunkingService.chunk("新正文")).thenReturn(List.of("新正文"));
+
+        DocumentEntity result = service.replace(entity, "新资料", "note", null, "新正文");
+
+        assertEquals("新资料", result.getName());
+        assertEquals("READY", result.getStatus());
+        verify(vectorStore).delete(any(Filter.Expression.class));
+        verify(vectorStore).add(anyList());
+    }
+
+    @Test
+    void shouldRejectDuplicateReplacement() {
+        DocumentEntity entity = new DocumentEntity();
+        entity.setId(1L);
+        when(documentRepository.existsByContentHashAndIdNot(anyString(), any(Long.class)))
+                .thenReturn(true);
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> service.replace(entity, "资料", "note", null, "重复正文")
+        );
+
+        verify(documentRepository, never()).save(any(DocumentEntity.class));
+        verifyNoInteractions(chunkingService, vectorStore);
+    }
+
+    @Test
+    void shouldDeleteVectorsByDocumentId() {
+        service.deleteVectors(1L);
+
+        verify(vectorStore).delete(any(Filter.Expression.class));
     }
 
     private void stubRepositorySave() {
