@@ -29,3 +29,8 @@ target/
 # IntelliJ IDEA
 .idea/
 *.iml
+
+# Local environment
+.env
+.env.*
+!.env.example
