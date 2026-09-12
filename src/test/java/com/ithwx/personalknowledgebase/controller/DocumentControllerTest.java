@@ -1,0 +1,161 @@
+package com.ithwx.personalknowledgebase.controller;
+
+import com.ithwx.personalknowledgebase.entity.DocumentEntity;
+import com.ithwx.personalknowledgebase.exception.GlobalExceptionHandler;
+import com.ithwx.personalknowledgebase.service.DocumentManagementService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@ExtendWith(MockitoExtension.class)
+class DocumentControllerTest {
+
+    @Mock
+    private DocumentManagementService service;
+
+    private MockMvc mockMvc;
+
+    @BeforeEach
+    void setUp() {
+        mockMvc = MockMvcBuilders.standaloneSetup(new DocumentController(service))
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+    }
+
+    @Test
+    void shouldUploadFile() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "资料.txt", "text/plain",
+                "正文".getBytes(StandardCharsets.UTF_8)
+        );
+        when(service.upload(file)).thenReturn(document(1L, "资料.txt", "txt"));
+
+        mockMvc.perform(multipart("/api/documents").file(file))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.fileType").value("txt"));
+    }
+
+    @Test
+    void shouldCreateNoteAndLink() throws Exception {
+        when(service.createNote("学习笔记", "笔记正文"))
+                .thenReturn(document(1L, "学习笔记", "note"));
+        when(service.createLink("https://example.com", null))
+                .thenReturn(document(2L, "网页标题", "web"));
+
+        mockMvc.perform(post("/api/documents/notes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"学习笔记","content":"笔记正文"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value("学习笔记"));
+
+        mockMvc.perform(post("/api/documents/links")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"url":"https://example.com"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.fileType").value("web"));
+    }
+
+    @Test
+    void shouldRejectBlankNote() throws Exception {
+        mockMvc.perform(post("/api/documents/notes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":" ","content":" "}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void shouldListAndReadDetail() throws Exception {
+        DocumentEntity document = document(1L, "学习笔记", "note");
+        document.setContent("完整正文");
+        when(service.list()).thenReturn(List.of(document));
+        when(service.get(1L)).thenReturn(document);
+
+        mockMvc.perform(get("/api/documents"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("学习笔记"))
+                .andExpect(jsonPath("$[0].content").doesNotExist());
+
+        mockMvc.perform(get("/api/documents/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").value("完整正文"));
+    }
+
+    @Test
+    void shouldUpdateDocument() throws Exception {
+        when(service.update(1L, "新名称", "新正文"))
+                .thenReturn(document(1L, "新名称", "note"));
+
+        mockMvc.perform(put("/api/documents/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"新名称","content":"新正文"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("新名称"));
+    }
+
+    @Test
+    void shouldReplaceFileAndDeleteDocument() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "新文件.md", "text/markdown",
+                "# 新正文".getBytes(StandardCharsets.UTF_8)
+        );
+        when(service.replaceFile(1L, file))
+                .thenReturn(document(1L, "新文件.md", "md"));
+
+        mockMvc.perform(multipart("/api/documents/1")
+                        .file(file)
+                        .with(request -> {
+                            request.setMethod("PUT");
+                            return request;
+                        }))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fileType").value("md"));
+
+        mockMvc.perform(delete("/api/documents/1"))
+                .andExpect(status().isNoContent());
+        verify(service).delete(1L);
+    }
+
+    private DocumentEntity document(Long id, String name, String fileType) {
+        DocumentEntity entity = new DocumentEntity();
+        entity.setId(id);
+        entity.setName(name);
+        entity.setFileType(fileType);
+        entity.setStatus("READY");
+        entity.setChunkCount(1);
+        entity.setUploadTime(LocalDateTime.of(2026, 9, 12, 12, 0));
+        return entity;
+    }
+}
