@@ -45,6 +45,11 @@ public class KnowledgeIngestionService {
             throw new IllegalArgumentException("资料名称、类型和正文不能为空");
         }
 
+        String contentHash = sha256(content);
+        if (documentRepository.existsByContentHash(contentHash)) {
+            throw new IllegalArgumentException("相同内容的资料已存在");
+        }
+
         List<String> chunks = chunkingService.chunk(content);
 
         DocumentEntity entity = new DocumentEntity();
@@ -52,7 +57,7 @@ public class KnowledgeIngestionService {
         entity.setFileType(sourceType.strip().toLowerCase(Locale.ROOT));
         entity.setSourceUrl(sourceUrl == null || sourceUrl.isBlank() ? null : sourceUrl.strip());
         entity.setContent(content);
-        entity.setContentHash(sha256(content));
+        entity.setContentHash(contentHash);
         entity.setStatus("PROCESSING");
         entity = documentRepository.save(entity);
 
