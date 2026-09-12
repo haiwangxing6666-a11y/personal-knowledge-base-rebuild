@@ -18,9 +18,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,17 +41,11 @@ class KnowledgeIngestionServiceTest {
     @BeforeEach
     void setUp() {
         service = new KnowledgeIngestionService(chunkingService, documentRepository, vectorStore);
-        when(documentRepository.save(any(DocumentEntity.class))).thenAnswer(invocation -> {
-            DocumentEntity entity = invocation.getArgument(0);
-            if (entity.getId() == null) {
-                entity.setId(1L);
-            }
-            return entity;
-        });
     }
 
     @Test
     void shouldSplitAndStoreDocument() {
+        stubRepositorySave();
         when(chunkingService.chunk("第一段\n\n第二段"))
                 .thenReturn(List.of("第一段", "第二段"));
 
@@ -73,6 +70,7 @@ class KnowledgeIngestionServiceTest {
 
     @Test
     void shouldMarkDocumentFailedWhenVectorStoreFails() {
+        stubRepositorySave();
         when(chunkingService.chunk("正文")).thenReturn(List.of("正文"));
         doThrow(new RuntimeException("向量服务失败")).when(vectorStore).add(anyList());
 
@@ -84,5 +82,29 @@ class KnowledgeIngestionServiceTest {
         ArgumentCaptor<DocumentEntity> captor = ArgumentCaptor.forClass(DocumentEntity.class);
         verify(documentRepository, times(2)).save(captor.capture());
         assertEquals("FAILED", captor.getValue().getStatus());
+    }
+
+    @Test
+    void shouldRejectDuplicateContent() {
+        when(documentRepository.existsByContentHash(anyString())).thenReturn(true);
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.ingest("重复资料", "txt", null, "相同正文")
+        );
+
+        assertEquals("相同内容的资料已存在", exception.getMessage());
+        verify(documentRepository, never()).save(any(DocumentEntity.class));
+        verifyNoInteractions(chunkingService, vectorStore);
+    }
+
+    private void stubRepositorySave() {
+        when(documentRepository.save(any(DocumentEntity.class))).thenAnswer(invocation -> {
+            DocumentEntity entity = invocation.getArgument(0);
+            if (entity.getId() == null) {
+                entity.setId(1L);
+            }
+            return entity;
+        });
     }
 }
