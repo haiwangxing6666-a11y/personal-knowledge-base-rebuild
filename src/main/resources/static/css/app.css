@@ -1254,6 +1254,67 @@ footer {
     white-space: pre-wrap;
 }
 
+.markdown-answer {
+    white-space: normal;
+}
+
+.markdown-answer > :first-child {
+    margin-top: 0;
+}
+
+.markdown-answer > :last-child {
+    margin-bottom: 0;
+}
+
+.markdown-answer p,
+.markdown-answer ul,
+.markdown-answer ol,
+.markdown-answer blockquote,
+.markdown-answer pre {
+    margin: 0 0 10px;
+}
+
+.markdown-answer ul,
+.markdown-answer ol {
+    padding-left: 22px;
+}
+
+.markdown-answer h1,
+.markdown-answer h2,
+.markdown-answer h3 {
+    margin: 14px 0 8px;
+    line-height: 1.4;
+}
+
+.markdown-answer h1 {
+    font-size: 19px;
+}
+
+.markdown-answer h2 {
+    font-size: 17px;
+}
+
+.markdown-answer h3 {
+    font-size: 15px;
+}
+
+.markdown-answer code {
+    padding: 2px 5px;
+    border-radius: 4px;
+    background: #edf3f5;
+}
+
+.markdown-answer pre {
+    overflow-x: auto;
+    padding: 12px;
+    border-radius: 8px;
+    background: #edf3f5;
+}
+
+.markdown-answer pre code {
+    padding: 0;
+}
+
 .message.user .message-bubble {
     border-color: var(--primary);
     border-radius: 16px 5px 16px 16px;
