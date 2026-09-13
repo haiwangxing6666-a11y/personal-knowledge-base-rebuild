@@ -65,18 +65,24 @@ function appendUserMessage(question) {
     messages.append(message);
 }
 
-function appendAssistantMessage(text) {
+function appendAssistantMessage(text, markdown = false) {
     const message = document.createElement("article");
     message.className = "message assistant";
     message.innerHTML = '<span class="message-icon">知</span><div class="message-content"><div class="message-bubble"></div></div>';
-    message.querySelector(".message-bubble").textContent = text;
+    const bubble = message.querySelector(".message-bubble");
+    if (markdown) {
+        bubble.classList.add("markdown-answer");
+        bubble.innerHTML = DOMPurify.sanitize(marked.parse(text), {USE_PROFILES: {html: true}});
+    } else {
+        bubble.textContent = text;
+    }
     messages.append(message);
     messages.scrollTop = messages.scrollHeight;
     return message;
 }
 
 function appendAnswer(result) {
-    const message = appendAssistantMessage(result.answer);
+    const message = appendAssistantMessage(result.answer, true);
     if (result.refused) message.classList.add("refused");
     const content = message.querySelector(".message-content");
 
