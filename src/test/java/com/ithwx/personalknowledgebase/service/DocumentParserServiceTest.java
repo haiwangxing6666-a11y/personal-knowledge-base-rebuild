@@ -13,6 +13,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -26,7 +27,22 @@ class DocumentParserServiceTest {
         MockMultipartFile markdown = file("README.md", "# Markdown 标题");
 
         assertEquals("中文笔记", parserService.parse(txt));
-        assertEquals("# Markdown 标题", parserService.parse(markdown));
+        assertEquals("Markdown 标题", parserService.parse(markdown));
+    }
+
+    @Test
+    void shouldRemoveMarkdownFormatting() throws Exception {
+        String result = parserService.parse(file(
+                "note.markdown",
+                "# 标题\n\n这是 **重点内容**，参考[官网](https://example.com)。"
+        ));
+
+        assertTrue(result.contains("标题"));
+        assertTrue(result.contains("重点内容"));
+        assertTrue(result.contains("官网"));
+        assertFalse(result.contains("#"));
+        assertFalse(result.contains("**"));
+        assertFalse(result.contains("]("));
     }
 
     @Test
