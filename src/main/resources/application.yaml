@@ -21,6 +21,7 @@ spring:
       embedding: openai
       chat: openai
     openai:
+      timeout: 180s
       api-key: ${SILICONFLOW_API_KEY:replace-with-your-api-key}
       base-url: ${SILICONFLOW_BASE_URL:https://api.siliconflow.cn/v1}
       embedding:
