@@ -1,6 +1,6 @@
 package com.ithwx.personalknowledgebase.controller;
 
-import com.ithwx.personalknowledgebase.entity.DocumentEntity;
+import com.ithwx.personalknowledgebase.library.domain.Document;
 import com.ithwx.personalknowledgebase.exception.GlobalExceptionHandler;
 import com.ithwx.personalknowledgebase.service.DocumentManagementService;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -96,7 +97,7 @@ class DocumentControllerTest {
 
     @Test
     void shouldListAndReadDetail() throws Exception {
-        DocumentEntity document = document(1L, "学习笔记", "note");
+        Document document = document(1L, "学习笔记", "note");
         document.setContent("完整正文");
         when(service.list()).thenReturn(List.of(document));
         when(service.get(1L)).thenReturn(document);
@@ -126,6 +127,23 @@ class DocumentControllerTest {
     }
 
     @Test
+    void shouldUpdateCategoryAndTags() throws Exception {
+        Document entity = document(1L, "Java 笔记", "note");
+        entity.setCategory("Java");
+        entity.setTags(Set.of("数据库"));
+        when(service.updateMetadata(1L, "Java", Set.of("数据库"))).thenReturn(entity);
+
+        mockMvc.perform(put("/api/documents/1/metadata")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"category":"Java","tags":["数据库"]}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.category").value("Java"))
+                .andExpect(jsonPath("$.tags[0]").value("数据库"));
+    }
+
+    @Test
     void shouldReplaceFileAndDeleteDocument() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "新文件.md", "text/markdown",
@@ -148,8 +166,8 @@ class DocumentControllerTest {
         verify(service).delete(1L);
     }
 
-    private DocumentEntity document(Long id, String name, String fileType) {
-        DocumentEntity entity = new DocumentEntity();
+    private Document document(Long id, String name, String fileType) {
+        Document entity = new Document();
         entity.setId(id);
         entity.setName(name);
         entity.setFileType(fileType);

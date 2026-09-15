@@ -1,18 +1,17 @@
 package com.ithwx.personalknowledgebase.service;
 
-import com.ithwx.personalknowledgebase.entity.DocumentEntity;
-import com.ithwx.personalknowledgebase.repository.DocumentRepository;
-import org.springframework.ai.document.Document;
+import com.ithwx.personalknowledgebase.library.domain.Document;
+import com.ithwx.personalknowledgebase.library.domain.ContentHash;
+import com.ithwx.personalknowledgebase.library.domain.DocumentDeleted;
+import com.ithwx.personalknowledgebase.library.domain.DocumentStatus;
+import com.ithwx.personalknowledgebase.library.domain.DocumentRepository;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -35,7 +34,7 @@ public class KnowledgeIngestionService {
         this.vectorStore = vectorStore;
     }
 
-    public DocumentEntity ingest(
+    public Document ingest(
             String name,
             String sourceType,
             String sourceUrl,
@@ -43,27 +42,27 @@ public class KnowledgeIngestionService {
     ) {
         validate(name, sourceType, content);
 
-        String contentHash = sha256(content);
+        String contentHash = ContentHash.of(content).value();
         if (documentRepository.existsByContentHash(contentHash)) {
             throw new IllegalArgumentException("相同内容的资料已存在");
         }
 
         List<String> chunks = chunkingService.chunk(content);
 
-        DocumentEntity entity = new DocumentEntity();
+        Document entity = new Document();
         entity.setName(name.strip());
         entity.setFileType(sourceType.strip().toLowerCase(Locale.ROOT));
         entity.setSourceUrl(sourceUrl == null || sourceUrl.isBlank() ? null : sourceUrl.strip());
         entity.setContent(content);
         entity.setContentHash(contentHash);
-        entity.setStatus("PROCESSING");
+        entity.setStatus(DocumentStatus.PROCESSING.name());
         entity = documentRepository.save(entity);
 
         return storeVectors(entity, chunks);
     }
 
-    public DocumentEntity replace(
-            DocumentEntity entity,
+    public Document replace(
+            Document entity,
             String name,
             String sourceType,
             String sourceUrl,
@@ -71,38 +70,43 @@ public class KnowledgeIngestionService {
     ) {
         validate(name, sourceType, content);
 
-        String contentHash = sha256(content);
-        if (documentRepository.existsByContentHashAndIdNot(contentHash, entity.getId())) {
+        String contentHash = ContentHash.of(content).value();
+        if (documentRepository.existsOtherWithHash(contentHash, entity.getId())) {
             throw new IllegalArgumentException("相同内容的资料已存在");
         }
 
         List<String> chunks = chunkingService.chunk(content);
-        vectorStore.delete(documentFilter(entity.getId()));
 
         entity.setName(name.strip());
         entity.setFileType(sourceType.strip().toLowerCase(Locale.ROOT));
         entity.setSourceUrl(sourceUrl == null || sourceUrl.isBlank() ? null : sourceUrl.strip());
         entity.setContent(content);
         entity.setContentHash(contentHash);
-        entity.setStatus("PROCESSING");
+        entity.setStatus(DocumentStatus.PROCESSING.name());
         entity.setChunkCount(0);
         documentRepository.save(entity);
+        vectorStore.delete(documentFilter(entity.getId()));
 
         return storeVectors(entity, chunks);
+    }
+
+    @EventListener
+    public void onDocumentDeleted(DocumentDeleted event) {
+        deleteVectors(event.documentId());
     }
 
     public void deleteVectors(Long documentId) {
         vectorStore.delete(documentFilter(documentId));
     }
 
-    private DocumentEntity storeVectors(DocumentEntity entity, List<String> chunks) {
+    private Document storeVectors(Document entity, List<String> chunks) {
         try {
             vectorStore.add(toVectorDocuments(entity, chunks));
-            entity.setStatus("READY");
+            entity.setStatus(DocumentStatus.READY.name());
             entity.setChunkCount(chunks.size());
             return documentRepository.save(entity);
         } catch (RuntimeException exception) {
-            entity.setStatus("FAILED");
+            entity.setStatus(DocumentStatus.FAILED.name());
             documentRepository.save(entity);
             throw exception;
         }
@@ -122,8 +126,8 @@ public class KnowledgeIngestionService {
         }
     }
 
-    private List<Document> toVectorDocuments(DocumentEntity entity, List<String> chunks) {
-        List<Document> documents = new ArrayList<>();
+    private List<org.springframework.ai.document.Document> toVectorDocuments(Document entity, List<String> chunks) {
+        List<org.springframework.ai.document.Document> documents = new ArrayList<>();
 
         for (int index = 0; index < chunks.size(); index++) {
             Map<String, Object> metadata = new LinkedHashMap<>();
@@ -135,23 +139,12 @@ public class KnowledgeIngestionService {
                 metadata.put("sourceUrl", entity.getSourceUrl());
             }
 
-            documents.add(Document.builder()
+            documents.add(org.springframework.ai.document.Document.builder()
                     .text(chunks.get(index))
                     .metadata(metadata)
                     .build());
         }
 
         return documents;
-    }
-
-    private String sha256(String content) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            return HexFormat.of().formatHex(
-                    digest.digest(content.getBytes(StandardCharsets.UTF_8))
-            );
-        } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("当前 Java 环境不支持 SHA-256", exception);
-        }
     }
 }

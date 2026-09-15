@@ -1,6 +1,7 @@
 package com.ithwx.personalknowledgebase.controller;
 
 import com.ithwx.personalknowledgebase.dto.DocumentDetailResponse;
+import com.ithwx.personalknowledgebase.dto.DocumentMetadataRequest;
 import com.ithwx.personalknowledgebase.dto.DocumentResponse;
 import com.ithwx.personalknowledgebase.dto.DocumentUpdateRequest;
 import com.ithwx.personalknowledgebase.dto.LinkCreateRequest;
@@ -60,6 +61,14 @@ public class DocumentController {
     @GetMapping("/{id}")
     public DocumentDetailResponse detail(@PathVariable Long id) {
         return DocumentDetailResponse.from(service.get(id));
+    }
+
+    @PutMapping("/{id}/metadata")
+    public DocumentResponse updateMetadata(
+            @PathVariable Long id,
+            @Valid @RequestBody DocumentMetadataRequest request
+    ) {
+        return DocumentResponse.from(service.updateMetadata(id, request.category(), request.tags()));
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
