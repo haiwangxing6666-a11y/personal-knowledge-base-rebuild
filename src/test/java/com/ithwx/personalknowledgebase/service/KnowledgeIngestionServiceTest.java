@@ -1,14 +1,15 @@
 package com.ithwx.personalknowledgebase.service;
 
-import com.ithwx.personalknowledgebase.entity.DocumentEntity;
-import com.ithwx.personalknowledgebase.repository.DocumentRepository;
+import com.ithwx.personalknowledgebase.library.domain.Document;
+import com.ithwx.personalknowledgebase.library.domain.DocumentRepository;
+import com.ithwx.personalknowledgebase.library.domain.DocumentDeleted;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.Filter;
 
@@ -50,7 +51,7 @@ class KnowledgeIngestionServiceTest {
         when(chunkingService.chunk("第一段\n\n第二段"))
                 .thenReturn(List.of("第一段", "第二段"));
 
-        DocumentEntity result = service.ingest(
+        Document result = service.ingest(
                 "Spring 笔记",
                 "NOTE",
                 null,
@@ -62,7 +63,7 @@ class KnowledgeIngestionServiceTest {
         assertTrue(result.getContentHash().matches("[0-9a-f]{64}"));
 
         @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<Document>> captor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<List<org.springframework.ai.document.Document>> captor = ArgumentCaptor.forClass(List.class);
         verify(vectorStore).add(captor.capture());
         assertEquals("第一段", captor.getValue().get(0).getText());
         assertEquals("1", captor.getValue().get(0).getMetadata().get("documentId"));
@@ -80,7 +81,7 @@ class KnowledgeIngestionServiceTest {
                 () -> service.ingest("失败资料", "txt", null, "正文")
         );
 
-        ArgumentCaptor<DocumentEntity> captor = ArgumentCaptor.forClass(DocumentEntity.class);
+        ArgumentCaptor<Document> captor = ArgumentCaptor.forClass(Document.class);
         verify(documentRepository, times(2)).save(captor.capture());
         assertEquals("FAILED", captor.getValue().getStatus());
     }
@@ -95,20 +96,20 @@ class KnowledgeIngestionServiceTest {
         );
 
         assertEquals("相同内容的资料已存在", exception.getMessage());
-        verify(documentRepository, never()).save(any(DocumentEntity.class));
+        verify(documentRepository, never()).save(any(Document.class));
         verifyNoInteractions(chunkingService, vectorStore);
     }
 
     @Test
     void shouldReplaceOldVectors() {
         stubRepositorySave();
-        DocumentEntity entity = new DocumentEntity();
+        Document entity = new Document();
         entity.setId(1L);
         entity.setName("旧资料");
         entity.setFileType("note");
         when(chunkingService.chunk("新正文")).thenReturn(List.of("新正文"));
 
-        DocumentEntity result = service.replace(entity, "新资料", "note", null, "新正文");
+        Document result = service.replace(entity, "新资料", "note", null, "新正文");
 
         assertEquals("新资料", result.getName());
         assertEquals("READY", result.getStatus());
@@ -117,10 +118,22 @@ class KnowledgeIngestionServiceTest {
     }
 
     @Test
+    void shouldNotStoreVectorsWhenDatabaseRejectsDuplicate() {
+        when(chunkingService.chunk("正文")).thenReturn(List.of("正文"));
+        when(documentRepository.save(any(Document.class)))
+                .thenThrow(new DataIntegrityViolationException("内容哈希重复"));
+
+        assertThrows(DataIntegrityViolationException.class,
+                () -> service.ingest("资料", "note", null, "正文"));
+
+        verifyNoInteractions(vectorStore);
+    }
+
+    @Test
     void shouldRejectDuplicateReplacement() {
-        DocumentEntity entity = new DocumentEntity();
+        Document entity = new Document();
         entity.setId(1L);
-        when(documentRepository.existsByContentHashAndIdNot(anyString(), any(Long.class)))
+        when(documentRepository.existsOtherWithHash(anyString(), any(Long.class)))
                 .thenReturn(true);
 
         assertThrows(
@@ -128,7 +141,7 @@ class KnowledgeIngestionServiceTest {
                 () -> service.replace(entity, "资料", "note", null, "重复正文")
         );
 
-        verify(documentRepository, never()).save(any(DocumentEntity.class));
+        verify(documentRepository, never()).save(any(Document.class));
         verifyNoInteractions(chunkingService, vectorStore);
     }
 
@@ -139,9 +152,16 @@ class KnowledgeIngestionServiceTest {
         verify(vectorStore).delete(any(Filter.Expression.class));
     }
 
+    @Test
+    void shouldDeleteVectorsWhenDocumentDeletedEventArrives() {
+        service.onDocumentDeleted(new DocumentDeleted(1L));
+
+        verify(vectorStore).delete(any(Filter.Expression.class));
+    }
+
     private void stubRepositorySave() {
-        when(documentRepository.save(any(DocumentEntity.class))).thenAnswer(invocation -> {
-            DocumentEntity entity = invocation.getArgument(0);
+        when(documentRepository.save(any(Document.class))).thenAnswer(invocation -> {
+            Document entity = invocation.getArgument(0);
             if (entity.getId() == null) {
                 entity.setId(1L);
             }

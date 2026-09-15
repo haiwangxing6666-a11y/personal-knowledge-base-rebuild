@@ -1,12 +1,16 @@
 package com.ithwx.personalknowledgebase.dto;
 
-import com.ithwx.personalknowledgebase.entity.DocumentEntity;
+import com.ithwx.personalknowledgebase.library.domain.Document;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record DocumentDetailResponse(
         Long id,
+        Long version,
         String name,
+        String category,
+        List<String> tags,
         String fileType,
         String sourceUrl,
         String status,
@@ -14,10 +18,13 @@ public record DocumentDetailResponse(
         LocalDateTime uploadTime,
         String content
 ) {
-    public static DocumentDetailResponse from(DocumentEntity entity) {
+    public static DocumentDetailResponse from(Document entity) {
         return new DocumentDetailResponse(
                 entity.getId(),
+                entity.getVersion(),
                 entity.getName(),
+                entity.getCategory(),
+                List.copyOf(entity.getTags()),
                 entity.getFileType(),
                 entity.getSourceUrl(),
                 entity.getStatus(),

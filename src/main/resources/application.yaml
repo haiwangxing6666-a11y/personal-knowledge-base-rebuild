@@ -6,7 +6,7 @@ spring:
     import: optional:file:.env[.properties]
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/personal_knowledge_base}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/personal_knowledge_base_rebuild}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
@@ -28,7 +28,7 @@ spring:
         model: ${EMBEDDING_MODEL:BAAI/bge-m3}
       chat:
         options:
-          model: ${CHAT_MODEL:Qwen/Qwen3-8B}
+          model: ${CHAT_MODEL:Qwen/Qwen2.5-7B-Instruct}
     vectorstore:
       pgvector:
         initialize-schema: true

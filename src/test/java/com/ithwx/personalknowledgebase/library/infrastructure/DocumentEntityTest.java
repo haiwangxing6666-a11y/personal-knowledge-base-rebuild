@@ -1,4 +1,4 @@
-package com.ithwx.personalknowledgebase.entity;
+package com.ithwx.personalknowledgebase.library.infrastructure;
 
 import org.junit.jupiter.api.Test;
 

@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -62,6 +63,15 @@ public class GlobalExceptionHandler {
     ) {
         return response(HttpStatus.NOT_FOUND, "NOT_FOUND",
                 exception.getMessage(), request, Map.of());
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiErrorResponse> handleDataConflict(
+            DataIntegrityViolationException exception,
+            HttpServletRequest request
+    ) {
+        return response(HttpStatus.CONFLICT, "DATA_CONFLICT",
+                "资料与已有数据冲突", request, Map.of());
     }
 
     @ExceptionHandler(Exception.class)
