@@ -80,6 +80,7 @@ GitHub Actions 会在创建 PR 和更新 `main` 时自动执行相同检查。
 | `PUT` | `/api/documents/{id}` | 更新资料或替换文件 |
 | `DELETE` | `/api/documents/{id}` | 删除资料 |
 | `POST` | `/api/chat` | 知识库问答 |
+| `GET` | `/api/chat/{conversationId}` | 查询会话历史 |
 
 ## 设计文档
 
