@@ -10,8 +10,16 @@ const TYPE_INFO = {
     web: ["网页", "#258269"]
 };
 
+const STATUS_TEXT = {
+    PENDING: "等待处理",
+    PROCESSING: "正在处理",
+    READY: "已完成索引",
+    FAILED: "处理失败"
+};
+
 const documents = [];
 let selectedDocument;
+let refreshTimer;
 
 bindTabs();
 bindCreateForms();
@@ -44,7 +52,7 @@ function bindCreateForms() {
         submit(event, () => request(API, {
             method: "POST",
             body: new FormData(event.currentTarget)
-        }), "文件已入库");
+        }), "文件已提交，正在后台处理");
     });
 
     document.querySelector("#note-form").addEventListener("submit", event => {
@@ -52,7 +60,7 @@ function bindCreateForms() {
         submit(event, () => request(`${API}/notes`, jsonRequest("POST", {
             title: data.get("title"),
             content: data.get("content")
-        })), "笔记已入库");
+        })), "笔记已提交，正在后台处理");
     });
 
     document.querySelector("#link-form").addEventListener("submit", event => {
@@ -60,7 +68,7 @@ function bindCreateForms() {
         submit(event, () => request(`${API}/links`, jsonRequest("POST", {
             url: data.get("url"),
             title: data.get("title")
-        })), "网页已入库");
+        })), "网页已提交，正在后台处理");
     });
 }
 
@@ -106,7 +114,7 @@ function bindDialogs() {
                 content: data.get("content")
             }));
             document.querySelector("#edit-note-dialog").close();
-            showToast("笔记已更新");
+            showToast("修改已提交，正在后台处理");
             await loadDocuments();
         } catch (error) {
             showToast(error.message, true);
@@ -124,7 +132,7 @@ function bindDialogs() {
                 body: new FormData(event.currentTarget)
             });
             document.querySelector("#replace-file-dialog").close();
-            showToast("文件已替换");
+            showToast("替换已提交，正在后台处理");
             await loadDocuments();
         } catch (error) {
             showToast(error.message, true);
@@ -147,10 +155,14 @@ async function loadHealth() {
 async function loadDocuments() {
     const loading = document.querySelector("#loading-state");
     loading.hidden = false;
+    clearTimeout(refreshTimer);
     try {
         const result = await request(API);
         documents.splice(0, documents.length, ...result);
         renderDocuments();
+        if (documents.some(item => ["PENDING", "PROCESSING"].includes(item.status))) {
+            refreshTimer = setTimeout(loadDocuments, 2000);
+        }
     } catch (error) {
         showToast(error.message, true);
     } finally {
@@ -178,13 +190,15 @@ function renderDocuments() {
             </div>
             <h3>${escapeHtml(item.name)}</h3>
             ${item.sourceUrl ? `<p class="document-url">${escapeHtml(item.sourceUrl)}</p>` : ""}
+            ${item.failureReason ? `<p class="document-error">${escapeHtml(item.failureReason)}</p>` : ""}
             <div class="document-meta">
-                <span class="ready-pill">${item.status === "READY" ? "已完成索引" : escapeHtml(item.status)}</span>
+                <span class="ready-pill">${STATUS_TEXT[item.status] || escapeHtml(item.status)}</span>
                 <span>${item.chunkCount} 个片段</span>
                 <time>${new Date(item.uploadTime).toLocaleDateString("zh-CN")}</time>
             </div>`;
 
         const actions = card.querySelector(".document-actions");
+        if (item.status === "FAILED") addButton(actions, "↻", "重新处理", () => retryDocument(item));
         if (item.fileType === "note") addButton(actions, "✎", "修改笔记", () => openNoteEditor(item));
         if (["txt", "md", "markdown", "pdf", "docx"].includes(item.fileType)) {
             addButton(actions, "↥", "替换文件", () => openFileDialog(item));
@@ -202,6 +216,16 @@ function addButton(parent, text, title, action, className = "") {
     button.className = className;
     button.addEventListener("click", action);
     parent.append(button);
+}
+
+async function retryDocument(item) {
+    try {
+        await request(`${API}/${item.id}/retry`, {method: "POST"});
+        showToast("已重新提交处理");
+        await loadDocuments();
+    } catch (error) {
+        showToast(error.message, true);
+    }
 }
 
 async function openNoteEditor(item) {

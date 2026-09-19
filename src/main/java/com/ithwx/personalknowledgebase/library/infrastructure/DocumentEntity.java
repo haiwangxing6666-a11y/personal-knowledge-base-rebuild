@@ -66,6 +66,9 @@ public class DocumentEntity {
     @Column(name = "upload_time", nullable = false)
     private LocalDateTime uploadTime;
 
+    @Column(name = "failure_reason", length = 1000)
+    private String failureReason;
+
     @Column(nullable = false, length = 32)
     private String status;
 

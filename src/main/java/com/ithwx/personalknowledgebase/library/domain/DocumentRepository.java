@@ -7,6 +7,8 @@ public interface DocumentRepository {
 
     List<Document> listNewestFirst();
 
+    List<Document> findByStatuses(List<String> statuses);
+
     Optional<Document> findById(Long id);
 
     boolean existsByContentHash(String hash);

@@ -1,12 +1,12 @@
-package com.ithwx.personalknowledgebase.controller;
+package com.ithwx.personalknowledgebase.library.interfaces;
 
-import com.ithwx.personalknowledgebase.dto.DocumentDetailResponse;
-import com.ithwx.personalknowledgebase.dto.DocumentMetadataRequest;
-import com.ithwx.personalknowledgebase.dto.DocumentResponse;
-import com.ithwx.personalknowledgebase.dto.DocumentUpdateRequest;
-import com.ithwx.personalknowledgebase.dto.LinkCreateRequest;
-import com.ithwx.personalknowledgebase.dto.NoteCreateRequest;
-import com.ithwx.personalknowledgebase.service.DocumentManagementService;
+import com.ithwx.personalknowledgebase.library.application.DocumentService;
+import com.ithwx.personalknowledgebase.library.interfaces.dto.DocumentDetailResponse;
+import com.ithwx.personalknowledgebase.library.interfaces.dto.DocumentMetadataRequest;
+import com.ithwx.personalknowledgebase.library.interfaces.dto.DocumentResponse;
+import com.ithwx.personalknowledgebase.library.interfaces.dto.DocumentUpdateRequest;
+import com.ithwx.personalknowledgebase.library.interfaces.dto.LinkCreateRequest;
+import com.ithwx.personalknowledgebase.library.interfaces.dto.NoteCreateRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,33 +25,41 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/documents")
 public class DocumentController {
 
-    private final DocumentManagementService service;
+    private final DocumentService service;
 
-    public DocumentController(DocumentManagementService service) {
+    public DocumentController(DocumentService service) {
         this.service = service;
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public DocumentResponse upload(@RequestPart("file") MultipartFile file) throws IOException {
-        return DocumentResponse.from(service.upload(file));
+    public DocumentResponse upload(
+            @RequestPart("file") MultipartFile file,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) Set<String> tags
+    ) throws IOException {
+        return DocumentResponse.from(service.submitFile(
+                file.getOriginalFilename(), file.getBytes(), category, tags));
     }
 
     @PostMapping("/notes")
     @ResponseStatus(HttpStatus.CREATED)
     public DocumentResponse createNote(@Valid @RequestBody NoteCreateRequest request) {
-        return DocumentResponse.from(service.createNote(request.title(), request.content()));
+        return DocumentResponse.from(service.createNote(
+                request.title(), request.content(), request.category(), request.tags()));
     }
 
     @PostMapping("/links")
     @ResponseStatus(HttpStatus.CREATED)
     public DocumentResponse createLink(@Valid @RequestBody LinkCreateRequest request) {
-        return DocumentResponse.from(service.createLink(request.url(), request.title()));
+        return DocumentResponse.from(service.collectWebPage(
+                request.url(), request.title(), request.category(), request.tags()));
     }
 
     @GetMapping
@@ -68,7 +77,8 @@ public class DocumentController {
             @PathVariable Long id,
             @Valid @RequestBody DocumentMetadataRequest request
     ) {
-        return DocumentResponse.from(service.updateMetadata(id, request.category(), request.tags()));
+        return DocumentResponse.from(service.updateMetadata(
+                id, request.category(), request.tags()));
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -84,7 +94,13 @@ public class DocumentController {
             @PathVariable Long id,
             @RequestPart("file") MultipartFile file
     ) throws IOException {
-        return DocumentResponse.from(service.replaceFile(id, file));
+        return DocumentResponse.from(service.replaceFile(
+                id, file.getOriginalFilename(), file.getBytes()));
+    }
+
+    @PostMapping("/{id}/retry")
+    public DocumentResponse retry(@PathVariable Long id) {
+        return DocumentResponse.from(service.retry(id));
     }
 
     @DeleteMapping("/{id}")

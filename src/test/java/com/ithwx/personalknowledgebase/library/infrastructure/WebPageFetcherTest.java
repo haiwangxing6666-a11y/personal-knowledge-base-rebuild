@@ -1,6 +1,5 @@
-package com.ithwx.personalknowledgebase.service;
+package com.ithwx.personalknowledgebase.library.infrastructure;
 
-import com.ithwx.personalknowledgebase.dto.WebPage;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
@@ -10,9 +9,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class WebContentServiceTest {
+class WebPageFetcherTest {
 
-    private final WebContentService service = new WebContentService();
+    private final WebPageFetcher fetcher = new WebPageFetcher();
 
     @Test
     void shouldExtractTitleAndMainContent() {
@@ -22,7 +21,7 @@ class WebContentServiceTest {
                 <script>脚本</script></body></html>
                 """;
 
-        WebPage page = service.parseContent(
+        WebPageFetcher.FetchedWebPage page = fetcher.parseContent(
                 URI.create("https://example.com/note"),
                 "text/html; charset=UTF-8",
                 html.getBytes(StandardCharsets.UTF_8)
@@ -36,7 +35,7 @@ class WebContentServiceTest {
 
     @Test
     void shouldExtractPlainText() {
-        WebPage page = service.parseContent(
+        WebPageFetcher.FetchedWebPage page = fetcher.parseContent(
                 URI.create("https://example.com/note.txt"),
                 "text/plain",
                 "  纯文本内容  ".getBytes(StandardCharsets.UTF_8)
@@ -47,17 +46,10 @@ class WebContentServiceTest {
     }
 
     @Test
-    void shouldRejectUnsupportedContentType() {
-        assertThrows(IllegalArgumentException.class, () -> service.parseContent(
-                URI.create("https://example.com/image"),
-                "image/png",
-                new byte[]{1}
-        ));
-    }
-
-    @Test
-    void shouldRejectInvalidOrPrivateUrl() {
-        assertThrows(IllegalArgumentException.class, () -> service.fetch("file:///test.txt"));
-        assertThrows(IllegalArgumentException.class, () -> service.fetch("http://127.0.0.1/test"));
+    void shouldRejectUnsupportedContentTypeOrPrivateUrl() {
+        assertThrows(IllegalArgumentException.class, () -> fetcher.parseContent(
+                URI.create("https://example.com/image"), "image/png", new byte[]{1}));
+        assertThrows(IllegalArgumentException.class, () -> fetcher.fetch("file:///test.txt"));
+        assertThrows(IllegalArgumentException.class, () -> fetcher.fetch("http://127.0.0.1/test"));
     }
 }

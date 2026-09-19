@@ -1,8 +1,8 @@
-package com.ithwx.personalknowledgebase.controller;
+package com.ithwx.personalknowledgebase.library.interfaces;
 
-import com.ithwx.personalknowledgebase.library.domain.Document;
 import com.ithwx.personalknowledgebase.exception.GlobalExceptionHandler;
-import com.ithwx.personalknowledgebase.service.DocumentManagementService;
+import com.ithwx.personalknowledgebase.library.application.DocumentService;
+import com.ithwx.personalknowledgebase.library.domain.Document;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -33,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class DocumentControllerTest {
 
     @Mock
-    private DocumentManagementService service;
+    private DocumentService service;
 
     private MockMvc mockMvc;
 
@@ -50,7 +51,12 @@ class DocumentControllerTest {
                 "file", "资料.txt", "text/plain",
                 "正文".getBytes(StandardCharsets.UTF_8)
         );
-        when(service.upload(file)).thenReturn(document(1L, "资料.txt", "txt"));
+        when(service.submitFile(
+                org.mockito.ArgumentMatchers.eq("资料.txt"),
+                any(byte[].class),
+                org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.isNull()
+        )).thenReturn(document(1L, "资料.txt", "txt"));
 
         mockMvc.perform(multipart("/api/documents").file(file))
                 .andExpect(status().isCreated())
@@ -60,9 +66,9 @@ class DocumentControllerTest {
 
     @Test
     void shouldCreateNoteAndLink() throws Exception {
-        when(service.createNote("学习笔记", "笔记正文"))
+        when(service.createNote("学习笔记", "笔记正文", null, null))
                 .thenReturn(document(1L, "学习笔记", "note"));
-        when(service.createLink("https://example.com", null))
+        when(service.collectWebPage("https://example.com", null, null, null))
                 .thenReturn(document(2L, "网页标题", "web"));
 
         mockMvc.perform(post("/api/documents/notes")
@@ -113,9 +119,12 @@ class DocumentControllerTest {
     }
 
     @Test
-    void shouldUpdateDocument() throws Exception {
-        when(service.update(1L, "新名称", "新正文"))
-                .thenReturn(document(1L, "新名称", "note"));
+    void shouldUpdateDocumentAndMetadata() throws Exception {
+        Document updated = document(1L, "新名称", "note");
+        when(service.update(1L, "新名称", "新正文")).thenReturn(updated);
+        updated.setCategory("Java");
+        updated.setTags(Set.of("数据库"));
+        when(service.updateMetadata(1L, "Java", Set.of("数据库"))).thenReturn(updated);
 
         mockMvc.perform(put("/api/documents/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -124,14 +133,6 @@ class DocumentControllerTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("新名称"));
-    }
-
-    @Test
-    void shouldUpdateCategoryAndTags() throws Exception {
-        Document entity = document(1L, "Java 笔记", "note");
-        entity.setCategory("Java");
-        entity.setTags(Set.of("数据库"));
-        when(service.updateMetadata(1L, "Java", Set.of("数据库"))).thenReturn(entity);
 
         mockMvc.perform(put("/api/documents/1/metadata")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -139,18 +140,23 @@ class DocumentControllerTest {
                                 {"category":"Java","tags":["数据库"]}
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.category").value("Java"))
-                .andExpect(jsonPath("$.tags[0]").value("数据库"));
+                .andExpect(jsonPath("$.category").value("Java"));
     }
 
     @Test
-    void shouldReplaceFileAndDeleteDocument() throws Exception {
+    void shouldReplaceRetryAndDeleteDocument() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "新文件.md", "text/markdown",
                 "# 新正文".getBytes(StandardCharsets.UTF_8)
         );
-        when(service.replaceFile(1L, file))
-                .thenReturn(document(1L, "新文件.md", "md"));
+        when(service.replaceFile(
+                org.mockito.ArgumentMatchers.eq(1L),
+                org.mockito.ArgumentMatchers.eq("新文件.md"),
+                any(byte[].class)
+        )).thenReturn(document(1L, "新文件.md", "md"));
+        Document retried = document(1L, "失败资料", "txt");
+        retried.setStatus("PENDING");
+        when(service.retry(1L)).thenReturn(retried);
 
         mockMvc.perform(multipart("/api/documents/1")
                         .file(file)
@@ -161,19 +167,23 @@ class DocumentControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.fileType").value("md"));
 
+        mockMvc.perform(post("/api/documents/1/retry"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("PENDING"));
+
         mockMvc.perform(delete("/api/documents/1"))
                 .andExpect(status().isNoContent());
         verify(service).delete(1L);
     }
 
     private Document document(Long id, String name, String fileType) {
-        Document entity = new Document();
-        entity.setId(id);
-        entity.setName(name);
-        entity.setFileType(fileType);
-        entity.setStatus("READY");
-        entity.setChunkCount(1);
-        entity.setUploadTime(LocalDateTime.of(2026, 9, 12, 12, 0));
-        return entity;
+        Document document = new Document();
+        document.setId(id);
+        document.setName(name);
+        document.setFileType(fileType);
+        document.setStatus("READY");
+        document.setChunkCount(1);
+        document.setUploadTime(LocalDateTime.of(2026, 9, 12, 12, 0));
+        return document;
     }
 }

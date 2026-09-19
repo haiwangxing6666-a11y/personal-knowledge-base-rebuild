@@ -37,6 +37,8 @@ spring:
         distance-type: COSINE_DISTANCE
 
 app:
+  storage:
+    directory: ${DOCUMENT_STORAGE_DIRECTORY:data/documents}
   chunk:
     max-chars: 500
     overlap-chars: 50
