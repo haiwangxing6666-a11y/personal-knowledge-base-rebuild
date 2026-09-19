@@ -1,13 +1,14 @@
-package com.ithwx.personalknowledgebase.library.domain;
+package com.ithwx.personalknowledgebase.index.domain;
 
 import java.util.Set;
 
-public record DocumentTextReady(
+public record KnowledgeChunk(
         Long documentId,
-        String name,
+        String documentName,
         String sourceType,
         String sourceUrl,
-        String content,
+        int chunkIndex,
+        String text,
         String category,
         Set<String> tags
 ) {

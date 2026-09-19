@@ -52,7 +52,8 @@ class ManageDocument {
         document.setCategory(category == null || category.isBlank() ? null : category.strip());
         document.setTags(normalizeTags(tags));
         Document saved = repository.save(document);
-        eventPublisher.publishEvent(new DocumentMetadataUpdated(saved.getId()));
+        eventPublisher.publishEvent(new DocumentMetadataUpdated(
+                saved.getId(), saved.getCategory(), saved.getTags()));
         return saved;
     }
 

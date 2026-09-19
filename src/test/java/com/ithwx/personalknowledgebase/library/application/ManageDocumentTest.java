@@ -57,7 +57,8 @@ class ManageDocumentTest {
 
         assertEquals("Java", document.getCategory());
         assertEquals(Set.of("数据库"), document.getTags());
-        verify(eventPublisher).publishEvent(new DocumentMetadataUpdated(1L));
+        verify(eventPublisher).publishEvent(new DocumentMetadataUpdated(
+                1L, "Java", Set.of("数据库")));
     }
 
     @Test
