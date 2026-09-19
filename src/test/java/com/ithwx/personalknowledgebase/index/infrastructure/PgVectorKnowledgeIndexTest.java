@@ -2,7 +2,6 @@ package com.ithwx.personalknowledgebase.index.infrastructure;
 
 import com.ithwx.personalknowledgebase.index.domain.KnowledgeChunk;
 import com.ithwx.personalknowledgebase.index.domain.SearchQuery;
-import com.ithwx.personalknowledgebase.index.domain.SearchResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -63,18 +62,18 @@ class PgVectorKnowledgeIndexTest {
     }
 
     @Test
-    void shouldRerankChunkFoundByBothSearchesFirst() {
+    void shouldMergeAndRemoveDuplicateChunks() {
         KnowledgeChunk both = chunk(1L, 0, "同时命中");
         KnowledgeChunk vectorOnly = chunk(2L, 0, "仅向量命中");
         KnowledgeChunk keywordOnly = chunk(3L, 0, "仅关键词命中");
 
-        List<SearchResult> results = knowledgeIndex.rerank(
+        List<KnowledgeChunk> results = knowledgeIndex.merge(
                 List.of(both, vectorOnly),
                 List.of(keywordOnly, both)
         );
 
-        assertEquals(both, results.get(0).chunk());
-        assertEquals(1.0, results.get(0).score());
+        assertEquals(both, results.get(0));
+        assertEquals(keywordOnly, results.get(2));
         assertEquals(3, results.size());
     }
 

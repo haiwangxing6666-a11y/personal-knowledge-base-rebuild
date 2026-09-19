@@ -5,7 +5,7 @@ import java.util.Set;
 
 public interface KnowledgeIndex {
 
-    List<SearchResult> search(SearchQuery query);
+    List<KnowledgeChunk> search(SearchQuery query);
 
     void replace(Long documentId, List<KnowledgeChunk> chunks);
 

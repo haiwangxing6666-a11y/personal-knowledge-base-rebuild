@@ -3,7 +3,6 @@ package com.ithwx.personalknowledgebase.index.infrastructure;
 import com.ithwx.personalknowledgebase.index.domain.KnowledgeChunk;
 import com.ithwx.personalknowledgebase.index.domain.KnowledgeIndex;
 import com.ithwx.personalknowledgebase.index.domain.SearchQuery;
-import com.ithwx.personalknowledgebase.index.domain.SearchResult;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.Filter;
@@ -15,7 +14,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -25,8 +23,6 @@ import java.util.stream.Collectors;
 
 @Repository
 public class PgVectorKnowledgeIndex implements KnowledgeIndex {
-
-    private static final int RRF_K = 60;
 
     private final VectorStore vectorStore;
     private final JdbcTemplate jdbcTemplate;
@@ -46,14 +42,14 @@ public class PgVectorKnowledgeIndex implements KnowledgeIndex {
     }
 
     @Override
-    public List<SearchResult> search(SearchQuery query) {
+    public List<KnowledgeChunk> search(SearchQuery query) {
         List<KnowledgeChunk> vectorResults = vectorSearch(query).stream()
                 .filter(chunk -> matchesFilters(chunk, query))
                 .toList();
         List<KnowledgeChunk> keywordResults = keywordSearch(query).stream()
                 .filter(chunk -> matchesFilters(chunk, query))
                 .toList();
-        return rerank(vectorResults, keywordResults);
+        return merge(vectorResults, keywordResults);
     }
 
     @Override
@@ -138,39 +134,23 @@ public class PgVectorKnowledgeIndex implements KnowledgeIndex {
         return categoryMatches && chunk.tags().containsAll(query.tags());
     }
 
-    List<SearchResult> rerank(
+    List<KnowledgeChunk> merge(
             List<KnowledgeChunk> vectorResults,
             List<KnowledgeChunk> keywordResults
     ) {
-        Map<String, KnowledgeChunk> chunks = new LinkedHashMap<>();
-        Map<String, Double> scores = new LinkedHashMap<>();
-        addRanking(vectorResults, chunks, scores);
-        addRanking(keywordResults, chunks, scores);
-
-        double maxScore = scores.values().stream()
-                .mapToDouble(Double::doubleValue)
-                .max()
-                .orElse(1.0);
-
-        return scores.entrySet().stream()
-                .sorted(Map.Entry.<String, Double>comparingByValue(Comparator.reverseOrder()))
-                .map(entry -> new SearchResult(
-                        chunks.get(entry.getKey()),
-                        entry.getValue() / maxScore
-                ))
-                .toList();
+        Map<String, KnowledgeChunk> uniqueChunks = new LinkedHashMap<>();
+        addUnique(vectorResults, uniqueChunks);
+        addUnique(keywordResults, uniqueChunks);
+        return List.copyOf(uniqueChunks.values());
     }
 
-    private void addRanking(
-            List<KnowledgeChunk> ranking,
-            Map<String, KnowledgeChunk> chunks,
-            Map<String, Double> scores
+    private void addUnique(
+            List<KnowledgeChunk> candidates,
+            Map<String, KnowledgeChunk> uniqueChunks
     ) {
-        for (int index = 0; index < ranking.size(); index++) {
-            KnowledgeChunk chunk = ranking.get(index);
+        for (KnowledgeChunk chunk : candidates) {
             String key = chunk.documentId() + ":" + chunk.chunkIndex();
-            chunks.putIfAbsent(key, chunk);
-            scores.merge(key, 1.0 / (RRF_K + index + 1), Double::sum);
+            uniqueChunks.putIfAbsent(key, chunk);
         }
     }
 

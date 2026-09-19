@@ -47,3 +47,4 @@ app:
     max-context-chars: 2000
     similarity-threshold: 0.55
     retry-min-hits: 2
+    rerank-model: ${RERANK_MODEL:BAAI/bge-reranker-v2-m3}
