@@ -30,6 +30,9 @@ target/
 .idea/
 *.iml
 
+# Uploaded source files
+/data/
+
 # Local environment
 .env
 .env.*

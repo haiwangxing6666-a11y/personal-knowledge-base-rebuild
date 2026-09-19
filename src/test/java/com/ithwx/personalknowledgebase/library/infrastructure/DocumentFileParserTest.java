@@ -1,4 +1,4 @@
-package com.ithwx.personalknowledgebase.service;
+package com.ithwx.personalknowledgebase.library.infrastructure;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -7,7 +7,6 @@ import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.junit.jupiter.api.Test;
-import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
@@ -17,25 +16,22 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class DocumentParserServiceTest {
+class DocumentFileParserTest {
 
-    private final DocumentParserService parserService = new DocumentParserService();
+    private final DocumentFileParser parser = new DocumentFileParser();
 
     @Test
     void shouldParseTxtAndMarkdown() throws Exception {
-        MockMultipartFile txt = file("note.txt", "中文笔记");
-        MockMultipartFile markdown = file("README.md", "# Markdown 标题");
-
-        assertEquals("中文笔记", parserService.parse(txt));
-        assertEquals("Markdown 标题", parserService.parse(markdown));
+        assertEquals("中文笔记", parser.parse("note.txt", bytes("中文笔记")));
+        assertEquals("Markdown 标题", parser.parse("README.md", bytes("# Markdown 标题")));
     }
 
     @Test
     void shouldRemoveMarkdownFormatting() throws Exception {
-        String result = parserService.parse(file(
+        String result = parser.parse(
                 "note.markdown",
-                "# 标题\n\n这是 **重点内容**，参考[官网](https://example.com)。"
-        ));
+                bytes("# 标题\n\n这是 **重点内容**，参考[官网](https://example.com)。")
+        );
 
         assertTrue(result.contains("标题"));
         assertTrue(result.contains("重点内容"));
@@ -47,41 +43,27 @@ class DocumentParserServiceTest {
 
     @Test
     void shouldParsePdfAndDocx() throws Exception {
-        MockMultipartFile pdf = new MockMultipartFile(
-                "file", "note.pdf", "application/pdf", createPdf("PDF content")
-        );
-        MockMultipartFile docx = new MockMultipartFile(
-                "file", "note.docx", null, createDocx("DOCX content")
-        );
-
-        assertTrue(parserService.parse(pdf).contains("PDF content"));
-        assertTrue(parserService.parse(docx).contains("DOCX content"));
+        assertTrue(parser.parse("note.pdf", createPdf("PDF content")).contains("PDF content"));
+        assertTrue(parser.parse("note.docx", createDocx("DOCX content")).contains("DOCX content"));
     }
 
     @Test
     void shouldRecognizeUppercaseExtension() throws Exception {
-        assertEquals("大写扩展名", parserService.parse(file("note.TXT", "大写扩展名")));
+        assertEquals("大写扩展名", parser.parse("note.TXT", bytes("大写扩展名")));
     }
 
     @Test
-    void shouldRejectUnsupportedType() {
+    void shouldRejectUnsupportedOrEmptyFile() {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> parserService.parse(file("image.jpg", "image"))
+                () -> parser.parse("image.jpg", bytes("image"))
         );
-
         assertEquals("不支持的文件格式：jpg", exception.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> parser.parse("empty.txt", new byte[0]));
     }
 
-    @Test
-    void shouldRejectEmptyContent() {
-        assertThrows(IllegalArgumentException.class, () -> parserService.parse(file("empty.txt", "")));
-    }
-
-    private MockMultipartFile file(String filename, String content) {
-        return new MockMultipartFile(
-                "file", filename, null, content.getBytes(StandardCharsets.UTF_8)
-        );
+    private byte[] bytes(String content) {
+        return content.getBytes(StandardCharsets.UTF_8);
     }
 
     private byte[] createPdf(String text) throws Exception {

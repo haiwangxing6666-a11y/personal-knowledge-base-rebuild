@@ -25,6 +25,13 @@ public class JpaDocumentRepositoryAdapter implements DocumentRepository {
     }
 
     @Override
+    public List<Document> findByStatuses(List<String> statuses) {
+        return jpaRepository.findAllByStatusIn(statuses).stream()
+                .map(this::toDocument)
+                .toList();
+    }
+
+    @Override
     public Optional<Document> findById(Long id) {
         return jpaRepository.findById(id).map(this::toDocument);
     }
@@ -63,6 +70,7 @@ public class JpaDocumentRepositoryAdapter implements DocumentRepository {
         document.setContent(entity.getContent());
         document.setUploadTime(entity.getUploadTime());
         document.setStatus(entity.getStatus());
+        document.setFailureReason(entity.getFailureReason());
         document.setChunkCount(entity.getChunkCount());
         return document;
     }
@@ -81,6 +89,7 @@ public class JpaDocumentRepositoryAdapter implements DocumentRepository {
         entity.setContent(document.getContent());
         entity.setUploadTime(document.getUploadTime());
         entity.setStatus(document.getStatus());
+        entity.setFailureReason(document.getFailureReason());
         entity.setChunkCount(document.getChunkCount());
         return entity;
     }

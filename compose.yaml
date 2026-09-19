@@ -30,8 +30,12 @@ services:
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-BAAI/bge-m3}
       EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-1024}
       CHAT_MODEL: ${CHAT_MODEL:-Qwen/Qwen2.5-7B-Instruct}
+      DOCUMENT_STORAGE_DIRECTORY: /app/data/documents
     ports:
       - "8080:8080"
+    volumes:
+      - document-files:/app/data/documents
 
 volumes:
   postgres-data:
+  document-files:

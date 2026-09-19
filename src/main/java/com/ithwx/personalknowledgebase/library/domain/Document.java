@@ -23,6 +23,7 @@ public class Document {
     private String sourceUrl;
     private String contentHash;
     private String content;
+    private String failureReason;
     private LocalDateTime uploadTime;
     private String status;
     private Integer chunkCount;
