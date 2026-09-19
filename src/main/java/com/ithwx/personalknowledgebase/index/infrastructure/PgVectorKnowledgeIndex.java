@@ -13,13 +13,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Repository
 public class PgVectorKnowledgeIndex implements KnowledgeIndex {
@@ -55,16 +51,6 @@ public class PgVectorKnowledgeIndex implements KnowledgeIndex {
     }
 
     @Override
-    public void updateMetadata(Long documentId, String category, Set<String> tags) {
-        jdbcTemplate.update("""
-                UPDATE vector_store
-                SET metadata = (metadata::jsonb
-                    || jsonb_build_object('category', ?, 'tags', ?))::json
-                WHERE metadata ->> 'documentId' = ?
-                """, normalizedCategory(category), tagsText(tags), String.valueOf(documentId));
-    }
-
-    @Override
     public void delete(Long documentId) {
         vectorStore.delete(documentFilter(documentId));
     }
@@ -88,9 +74,7 @@ public class PgVectorKnowledgeIndex implements KnowledgeIndex {
                        metadata ->> 'documentName' AS document_name,
                        metadata ->> 'sourceType' AS source_type,
                        metadata ->> 'sourceUrl' AS source_url,
-                       (metadata ->> 'chunkIndex')::integer AS chunk_index,
-                       metadata ->> 'category' AS category,
-                       metadata ->> 'tags' AS tags
+                       (metadata ->> 'chunkIndex')::integer AS chunk_index
                 FROM vector_store
                 WHERE content % ? OR content ILIKE '%' || ? || '%'
                 ORDER BY similarity(content, ?) DESC
@@ -101,9 +85,7 @@ public class PgVectorKnowledgeIndex implements KnowledgeIndex {
                 resultSet.getString("source_type"),
                 resultSet.getString("source_url"),
                 resultSet.getInt("chunk_index"),
-                resultSet.getString("content"),
-                resultSet.getString("category"),
-                parseTags(resultSet.getString("tags"))
+                resultSet.getString("content")
         ), query.text(), query.text(), query.text(), query.candidateLimit());
     }
 
@@ -115,9 +97,7 @@ public class PgVectorKnowledgeIndex implements KnowledgeIndex {
                 metadata.get("sourceType").toString(),
                 metadata.get("sourceUrl") == null ? null : metadata.get("sourceUrl").toString(),
                 Integer.parseInt(metadata.get("chunkIndex").toString()),
-                document.getText(),
-                metadata.getOrDefault("category", "").toString(),
-                parseTags(metadata.getOrDefault("tags", "").toString())
+                document.getText()
         );
     }
 
@@ -141,14 +121,6 @@ public class PgVectorKnowledgeIndex implements KnowledgeIndex {
         }
     }
 
-    private Set<String> parseTags(String tags) {
-        if (tags == null || tags.isBlank()) {
-            return Set.of();
-        }
-        return Arrays.stream(tags.split(","))
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
     private Filter.Expression documentFilter(Long documentId) {
         return new FilterExpressionBuilder()
                 .eq("documentId", String.valueOf(documentId))
@@ -165,8 +137,6 @@ public class PgVectorKnowledgeIndex implements KnowledgeIndex {
             metadata.put("documentName", chunk.documentName());
             metadata.put("sourceType", chunk.sourceType());
             metadata.put("chunkIndex", chunk.chunkIndex());
-            metadata.put("category", normalizedCategory(chunk.category()));
-            metadata.put("tags", tagsText(chunk.tags()));
             if (chunk.sourceUrl() != null) {
                 metadata.put("sourceUrl", chunk.sourceUrl());
             }
@@ -178,14 +148,4 @@ public class PgVectorKnowledgeIndex implements KnowledgeIndex {
         return documents;
     }
 
-    private String normalizedCategory(String category) {
-        return category == null ? "" : category;
-    }
-
-    private String tagsText(Set<String> tags) {
-        if (tags == null) {
-            return "";
-        }
-        return tags.stream().sorted().collect(Collectors.joining(","));
-    }
 }

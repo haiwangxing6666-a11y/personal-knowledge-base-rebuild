@@ -11,11 +11,9 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.List;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,7 +35,7 @@ class PgVectorKnowledgeIndexTest {
     void shouldReplaceVectorsWithChunkMetadata() {
         KnowledgeChunk chunk = new KnowledgeChunk(
                 1L, "Spring 笔记", "note", null,
-                0, "正文", "Java", Set.of("数据库"));
+                0, "正文");
 
         knowledgeIndex.replace(1L, List.of(chunk));
 
@@ -47,15 +45,7 @@ class PgVectorKnowledgeIndexTest {
                 ArgumentCaptor.forClass(List.class);
         verify(vectorStore).add(documents.capture());
         assertEquals("正文", documents.getValue().get(0).getText());
-        assertEquals("Java", documents.getValue().get(0).getMetadata().get("category"));
-        assertEquals("数据库", documents.getValue().get(0).getMetadata().get("tags"));
-    }
-
-    @Test
-    void shouldUpdateMetadata() {
-        knowledgeIndex.updateMetadata(1L, "Java", Set.of("数据库"));
-
-        verify(jdbcTemplate).update(anyString(), any(), any(), any());
+        assertEquals("Spring 笔记", documents.getValue().get(0).getMetadata().get("documentName"));
     }
 
     @Test
@@ -77,7 +67,7 @@ class PgVectorKnowledgeIndexTest {
     private KnowledgeChunk chunk(Long documentId, int chunkIndex, String text) {
         return new KnowledgeChunk(
                 documentId, "资料" + documentId, "note", null,
-                chunkIndex, text, "Java", Set.of("数据库")
+                chunkIndex, text
         );
     }
 }

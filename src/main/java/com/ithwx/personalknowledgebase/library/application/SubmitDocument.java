@@ -6,7 +6,6 @@ import com.ithwx.personalknowledgebase.library.domain.DocumentStatus;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Set;
 
@@ -32,37 +31,33 @@ class SubmitDocument {
 
     Document file(
             String filename,
-            byte[] content,
-            String category,
-            Set<String> tags
+            byte[] content
     ) throws IOException {
         if (content.length == 0) {
             throw new IllegalArgumentException("文件内容不能为空");
         }
-        Document document = pending(filename, fileType(filename), category, tags);
+        Document document = pending(filename, fileType(filename));
         document.setFilePath(fileStorage.save(filename, content));
         return saveAndProcess(document);
     }
 
-    Document note(String title, String content, String category, Set<String> tags) {
-        Document document = pending(title, "note", category, tags);
+    Document note(String title, String content) {
+        Document document = pending(title, "note");
         document.setContent(content);
         return saveAndProcess(document);
     }
 
-    Document webPage(String url, String title, String category, Set<String> tags) {
+    Document webPage(String url, String title) {
         String name = title == null || title.isBlank() ? url.strip() : title.strip();
-        Document document = pending(name, "web", category, tags);
+        Document document = pending(name, "web");
         document.setSourceUrl(url.strip());
         return saveAndProcess(document);
     }
 
-    private Document pending(String name, String type, String category, Set<String> tags) {
+    private Document pending(String name, String type) {
         Document document = new Document();
         document.setName(name.strip());
         document.setFileType(type);
-        document.setCategory(category == null || category.isBlank() ? null : category.strip());
-        document.setTags(normalizeTags(tags));
         document.setStatus(DocumentStatus.PENDING.name());
         document.setChunkCount(0);
         return document;
@@ -72,16 +67,6 @@ class SubmitDocument {
         Document saved = repository.save(document);
         processDocument.processAsync(saved.getId());
         return saved;
-    }
-
-    private Set<String> normalizeTags(Set<String> tags) {
-        Set<String> normalized = new LinkedHashSet<>();
-        if (tags != null) {
-            for (String tag : tags) {
-                normalized.add(tag.strip());
-            }
-        }
-        return normalized;
     }
 
     private String fileType(String filename) {

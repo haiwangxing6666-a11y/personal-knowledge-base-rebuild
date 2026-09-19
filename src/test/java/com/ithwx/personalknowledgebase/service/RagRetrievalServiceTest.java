@@ -10,7 +10,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,7 +26,7 @@ class RagRetrievalServiceTest {
         RagRetrievalService service = new RagRetrievalService(searchKnowledge);
         KnowledgeChunk chunk = new KnowledgeChunk(
                 1L, "学习笔记", "note", null,
-                0, "相关内容", "Java", Set.of("RAG")
+                0, "相关内容"
         );
         when(searchKnowledge.search("什么是 RAG？"))
                 .thenReturn(List.of(new SearchResult(chunk, 0.88)));

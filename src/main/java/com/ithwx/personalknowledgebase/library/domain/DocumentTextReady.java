@@ -1,14 +1,10 @@
 package com.ithwx.personalknowledgebase.library.domain;
 
-import java.util.Set;
-
 public record DocumentTextReady(
         Long documentId,
         String name,
         String sourceType,
         String sourceUrl,
-        String content,
-        String category,
-        Set<String> tags
+        String content
 ) {
 }

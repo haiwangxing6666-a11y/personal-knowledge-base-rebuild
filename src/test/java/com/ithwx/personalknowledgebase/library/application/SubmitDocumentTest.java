@@ -8,7 +8,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,8 +41,7 @@ class SubmitDocumentTest {
         byte[] content = "正文".getBytes();
         when(fileStorage.save("笔记.TXT", content)).thenReturn("saved.txt");
 
-        Document result = submitDocument.file(
-                "笔记.TXT", content, "Java", Set.of("基础"));
+        Document result = submitDocument.file("笔记.TXT", content);
 
         assertEquals("PENDING", result.getStatus());
         assertEquals("txt", result.getFileType());
@@ -53,9 +51,8 @@ class SubmitDocumentTest {
 
     @Test
     void shouldSaveNoteAndWebAddressWithoutWaitingForExtraction() {
-        Document note = submitDocument.note("学习笔记", "正文", null, null);
-        Document web = submitDocument.webPage(
-                "https://example.com", null, null, null);
+        Document note = submitDocument.note("学习笔记", "正文");
+        Document web = submitDocument.webPage("https://example.com", null);
 
         assertEquals("正文", note.getContent());
         assertEquals("PENDING", note.getStatus());
