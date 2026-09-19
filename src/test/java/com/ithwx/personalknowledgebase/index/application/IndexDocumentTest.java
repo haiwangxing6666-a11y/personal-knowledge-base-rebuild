@@ -5,7 +5,6 @@ import com.ithwx.personalknowledgebase.index.domain.KnowledgeIndex;
 import com.ithwx.personalknowledgebase.index.infrastructure.TextChunker;
 import com.ithwx.personalknowledgebase.library.application.DocumentService;
 import com.ithwx.personalknowledgebase.library.domain.DocumentDeleted;
-import com.ithwx.personalknowledgebase.library.domain.DocumentMetadataUpdated;
 import com.ithwx.personalknowledgebase.library.domain.DocumentTextReady;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,7 +14,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -51,7 +49,7 @@ class IndexDocumentTest {
         ArgumentCaptor<List<KnowledgeChunk>> chunks = ArgumentCaptor.forClass(List.class);
         verify(knowledgeIndex).replace(org.mockito.ArgumentMatchers.eq(1L), chunks.capture());
         assertEquals("第一段", chunks.getValue().get(0).text());
-        assertEquals("Java", chunks.getValue().get(0).category());
+        assertEquals("Spring 笔记", chunks.getValue().get(0).documentName());
         verify(documentService).markReady(1L, 2);
     }
 
@@ -68,12 +66,9 @@ class IndexDocumentTest {
     }
 
     @Test
-    void shouldSynchronizeMetadataAndDeletion() {
-        indexDocument.onMetadataUpdated(
-                new DocumentMetadataUpdated(1L, "Java", Set.of("数据库")));
+    void shouldSynchronizeDeletion() {
         indexDocument.onDocumentDeleted(new DocumentDeleted(1L));
 
-        verify(knowledgeIndex).updateMetadata(1L, "Java", Set.of("数据库"));
         verify(knowledgeIndex).delete(1L);
     }
 
@@ -83,9 +78,7 @@ class IndexDocumentTest {
                 "Spring 笔记",
                 "note",
                 null,
-                "第一段\n\n第二段",
-                "Java",
-                Set.of("数据库")
+                "第一段\n\n第二段"
         );
     }
 }

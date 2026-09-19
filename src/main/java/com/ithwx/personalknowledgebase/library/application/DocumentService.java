@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Set;
 
 @Service
 public class DocumentService {
@@ -26,29 +25,23 @@ public class DocumentService {
 
     public Document submitFile(
             String filename,
-            byte[] content,
-            String category,
-            Set<String> tags
+            byte[] content
     ) throws IOException {
-        return submitDocument.file(filename, content, category, tags);
+        return submitDocument.file(filename, content);
     }
 
     public Document createNote(
             String title,
-            String content,
-            String category,
-            Set<String> tags
+            String content
     ) {
-        return submitDocument.note(title, content, category, tags);
+        return submitDocument.note(title, content);
     }
 
     public Document collectWebPage(
             String url,
-            String title,
-            String category,
-            Set<String> tags
+            String title
     ) {
-        return submitDocument.webPage(url, title, category, tags);
+        return submitDocument.webPage(url, title);
     }
 
     public List<Document> list() {
@@ -57,10 +50,6 @@ public class DocumentService {
 
     public Document get(Long id) {
         return manageDocument.get(id);
-    }
-
-    public Document updateMetadata(Long id, String category, Set<String> tags) {
-        return manageDocument.updateMetadata(id, category, tags);
     }
 
     public Document update(Long id, String name, String content) {

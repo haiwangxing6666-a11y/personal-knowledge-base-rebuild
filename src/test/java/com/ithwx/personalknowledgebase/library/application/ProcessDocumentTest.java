@@ -46,8 +46,6 @@ class ProcessDocumentTest {
         document.setId(1L);
         document.setName("笔记.txt");
         document.setFileType("txt");
-        document.setCategory("Java");
-        document.setTags(java.util.Set.of("基础"));
         document.setStatus("PENDING");
     }
 
@@ -65,8 +63,6 @@ class ProcessDocumentTest {
         ArgumentCaptor<DocumentTextReady> event = ArgumentCaptor.forClass(DocumentTextReady.class);
         verify(eventPublisher).publishEvent(event.capture());
         assertEquals("正文", event.getValue().content());
-        assertEquals("Java", event.getValue().category());
-        assertEquals(java.util.Set.of("基础"), event.getValue().tags());
     }
 
     @Test

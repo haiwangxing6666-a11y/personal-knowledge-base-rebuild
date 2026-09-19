@@ -7,7 +7,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.verify;
@@ -30,13 +29,12 @@ class DocumentServiceTest {
                 submitDocument, processDocument, manageDocument);
         byte[] content = "正文".getBytes();
 
-        when(submitDocument.file("笔记.txt", content, "Java", Set.of("基础")))
+        when(submitDocument.file("笔记.txt", content))
                 .thenReturn(document);
         when(manageDocument.list()).thenReturn(List.of(document));
         when(processDocument.retry(1L)).thenReturn(document);
 
-        assertSame(document, service.submitFile(
-                "笔记.txt", content, "Java", Set.of("基础")));
+        assertSame(document, service.submitFile("笔记.txt", content));
         assertSame(document, service.list().get(0));
         assertSame(document, service.retry(1L));
 

@@ -2,7 +2,6 @@ package com.ithwx.personalknowledgebase.library.application;
 
 import com.ithwx.personalknowledgebase.library.domain.Document;
 import com.ithwx.personalknowledgebase.library.domain.DocumentDeleted;
-import com.ithwx.personalknowledgebase.library.domain.DocumentMetadataUpdated;
 import com.ithwx.personalknowledgebase.library.domain.DocumentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,7 +13,6 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -47,18 +45,11 @@ class ManageDocumentTest {
     }
 
     @Test
-    void shouldListGetAndUpdateMetadata() {
+    void shouldListAndGet() {
         when(repository.listNewestFirst()).thenReturn(List.of(document));
-        when(repository.save(document)).thenReturn(document);
 
         assertSame(document, manageDocument.list().get(0));
         assertSame(document, manageDocument.get(1L));
-        manageDocument.updateMetadata(1L, " Java ", Set.of(" 数据库 "));
-
-        assertEquals("Java", document.getCategory());
-        assertEquals(Set.of("数据库"), document.getTags());
-        verify(eventPublisher).publishEvent(new DocumentMetadataUpdated(
-                1L, "Java", Set.of("数据库")));
     }
 
     @Test

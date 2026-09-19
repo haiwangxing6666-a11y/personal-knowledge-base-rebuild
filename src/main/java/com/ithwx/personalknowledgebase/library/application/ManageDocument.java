@@ -2,14 +2,12 @@ package com.ithwx.personalknowledgebase.library.application;
 
 import com.ithwx.personalknowledgebase.library.domain.Document;
 import com.ithwx.personalknowledgebase.library.domain.DocumentDeleted;
-import com.ithwx.personalknowledgebase.library.domain.DocumentMetadataUpdated;
 import com.ithwx.personalknowledgebase.library.domain.DocumentRepository;
 import com.ithwx.personalknowledgebase.library.domain.DocumentStatus;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.NoSuchElementException;
@@ -45,16 +43,6 @@ class ManageDocument {
     Document get(Long id) {
         return repository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("资料不存在：" + id));
-    }
-
-    Document updateMetadata(Long id, String category, Set<String> tags) {
-        Document document = get(id);
-        document.setCategory(category == null || category.isBlank() ? null : category.strip());
-        document.setTags(normalizeTags(tags));
-        Document saved = repository.save(document);
-        eventPublisher.publishEvent(new DocumentMetadataUpdated(
-                saved.getId(), saved.getCategory(), saved.getTags()));
-        return saved;
     }
 
     Document update(Long id, String name, String content) {
@@ -96,16 +84,6 @@ class ManageDocument {
         document.setStatus(DocumentStatus.PENDING.name());
         document.setChunkCount(0);
         document.setFailureReason(null);
-    }
-
-    private Set<String> normalizeTags(Set<String> tags) {
-        Set<String> normalized = new LinkedHashSet<>();
-        if (tags != null) {
-            for (String tag : tags) {
-                normalized.add(tag.strip());
-            }
-        }
-        return normalized;
     }
 
     private String fileType(String filename) {

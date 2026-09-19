@@ -3,14 +3,11 @@ package com.ithwx.personalknowledgebase.library.interfaces.dto;
 import com.ithwx.personalknowledgebase.library.domain.Document;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 public record DocumentDetailResponse(
         Long id,
         Long version,
         String name,
-        String category,
-        List<String> tags,
         String fileType,
         String sourceUrl,
         String status,
@@ -24,8 +21,6 @@ public record DocumentDetailResponse(
                 document.getId(),
                 document.getVersion(),
                 document.getName(),
-                document.getCategory(),
-                List.copyOf(document.getTags()),
                 document.getFileType(),
                 document.getSourceUrl(),
                 document.getStatus(),

@@ -6,7 +6,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -22,8 +21,6 @@ class JpaDocumentRepositoryAdapterTest {
     void shouldMapFieldsAndFlushBeforeReturningDocument() {
         Document input = new Document();
         input.setName("Java 笔记");
-        input.setCategory("Java");
-        input.setTags(Set.of("数据库"));
         input.setFileType("note");
         input.setSourceUrl("https://example.com");
         input.setContent("正文");
@@ -34,8 +31,6 @@ class JpaDocumentRepositoryAdapterTest {
         when(jpaRepository.saveAndFlush(any(DocumentEntity.class))).thenAnswer(invocation -> {
             DocumentEntity entity = invocation.getArgument(0);
             assertEquals("Java 笔记", entity.getName());
-            assertEquals("Java", entity.getCategory());
-            assertEquals(Set.of("数据库"), entity.getTags());
             assertEquals("正文", entity.getContent());
             assertEquals("abc", entity.getContentHash());
             entity.setId(1L);
@@ -48,8 +43,6 @@ class JpaDocumentRepositoryAdapterTest {
         assertEquals(1L, saved.getId());
         assertEquals(0L, saved.getVersion());
         assertEquals("Java 笔记", saved.getName());
-        assertEquals("Java", saved.getCategory());
-        assertEquals(Set.of("数据库"), saved.getTags());
         assertEquals("note", saved.getFileType());
         assertEquals("https://example.com", saved.getSourceUrl());
         assertEquals("正文", saved.getContent());

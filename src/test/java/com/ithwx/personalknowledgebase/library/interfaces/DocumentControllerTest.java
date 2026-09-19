@@ -16,7 +16,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -53,9 +52,7 @@ class DocumentControllerTest {
         );
         when(service.submitFile(
                 org.mockito.ArgumentMatchers.eq("资料.txt"),
-                any(byte[].class),
-                org.mockito.ArgumentMatchers.isNull(),
-                org.mockito.ArgumentMatchers.isNull()
+                any(byte[].class)
         )).thenReturn(document(1L, "资料.txt", "txt"));
 
         mockMvc.perform(multipart("/api/documents").file(file))
@@ -66,9 +63,9 @@ class DocumentControllerTest {
 
     @Test
     void shouldCreateNoteAndLink() throws Exception {
-        when(service.createNote("学习笔记", "笔记正文", null, null))
+        when(service.createNote("学习笔记", "笔记正文"))
                 .thenReturn(document(1L, "学习笔记", "note"));
-        when(service.collectWebPage("https://example.com", null, null, null))
+        when(service.collectWebPage("https://example.com", null))
                 .thenReturn(document(2L, "网页标题", "web"));
 
         mockMvc.perform(post("/api/documents/notes")
@@ -119,12 +116,9 @@ class DocumentControllerTest {
     }
 
     @Test
-    void shouldUpdateDocumentAndMetadata() throws Exception {
+    void shouldUpdateDocument() throws Exception {
         Document updated = document(1L, "新名称", "note");
         when(service.update(1L, "新名称", "新正文")).thenReturn(updated);
-        updated.setCategory("Java");
-        updated.setTags(Set.of("数据库"));
-        when(service.updateMetadata(1L, "Java", Set.of("数据库"))).thenReturn(updated);
 
         mockMvc.perform(put("/api/documents/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -133,14 +127,6 @@ class DocumentControllerTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("新名称"));
-
-        mockMvc.perform(put("/api/documents/1/metadata")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"category":"Java","tags":["数据库"]}
-                                """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.category").value("Java"));
     }
 
     @Test

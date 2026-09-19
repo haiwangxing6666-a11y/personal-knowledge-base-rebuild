@@ -5,7 +5,6 @@ import com.ithwx.personalknowledgebase.index.domain.KnowledgeIndex;
 import com.ithwx.personalknowledgebase.index.infrastructure.TextChunker;
 import com.ithwx.personalknowledgebase.library.application.DocumentService;
 import com.ithwx.personalknowledgebase.library.domain.DocumentDeleted;
-import com.ithwx.personalknowledgebase.library.domain.DocumentMetadataUpdated;
 import com.ithwx.personalknowledgebase.library.domain.DocumentTextReady;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -44,12 +43,6 @@ public class IndexDocument {
     }
 
     @EventListener
-    public void onMetadataUpdated(DocumentMetadataUpdated event) {
-        knowledgeIndex.updateMetadata(
-                event.documentId(), event.category(), event.tags());
-    }
-
-    @EventListener
     public void onDocumentDeleted(DocumentDeleted event) {
         knowledgeIndex.delete(event.documentId());
     }
@@ -66,9 +59,7 @@ public class IndexDocument {
                     event.sourceType(),
                     event.sourceUrl(),
                     index,
-                    texts.get(index),
-                    event.category(),
-                    event.tags()
+                    texts.get(index)
             ));
         }
         return chunks;

@@ -4,7 +4,6 @@ import com.ithwx.personalknowledgebase.library.domain.Document;
 import com.ithwx.personalknowledgebase.library.domain.DocumentRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -61,8 +60,6 @@ public class JpaDocumentRepositoryAdapter implements DocumentRepository {
         document.setId(entity.getId());
         document.setVersion(entity.getVersion());
         document.setName(entity.getName());
-        document.setCategory(entity.getCategory());
-        document.setTags(new LinkedHashSet<>(entity.getTags()));
         document.setFilePath(entity.getFilePath());
         document.setFileType(entity.getFileType());
         document.setSourceUrl(entity.getSourceUrl());
@@ -80,8 +77,6 @@ public class JpaDocumentRepositoryAdapter implements DocumentRepository {
         entity.setId(document.getId());
         entity.setVersion(document.getVersion());
         entity.setName(document.getName());
-        entity.setCategory(document.getCategory());
-        entity.setTags(new LinkedHashSet<>(document.getTags()));
         entity.setFilePath(document.getFilePath());
         entity.setFileType(document.getFileType());
         entity.setSourceUrl(document.getSourceUrl());

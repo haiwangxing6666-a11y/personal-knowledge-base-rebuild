@@ -62,9 +62,7 @@ class ProcessDocument {
                     document.getName(),
                     document.getFileType(),
                     document.getSourceUrl(),
-                    document.getContent(),
-                    document.getCategory(),
-                    document.getTags()
+                    document.getContent()
             ));
         } catch (Exception exception) {
             document.setContentHash(null);

@@ -9,7 +9,6 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
@@ -58,7 +57,7 @@ class SiliconFlowKnowledgeRerankerTest {
     private KnowledgeChunk chunk(Long documentId, String text) {
         return new KnowledgeChunk(
                 documentId, "资料" + documentId, "note", null,
-                0, text, "Java", Set.of("Spring")
+                0, text
         );
     }
 }
