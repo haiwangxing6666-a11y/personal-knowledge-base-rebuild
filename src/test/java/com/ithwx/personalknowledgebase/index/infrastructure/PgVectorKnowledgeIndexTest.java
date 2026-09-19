@@ -1,6 +1,8 @@
 package com.ithwx.personalknowledgebase.index.infrastructure;
 
 import com.ithwx.personalknowledgebase.index.domain.KnowledgeChunk;
+import com.ithwx.personalknowledgebase.index.domain.SearchQuery;
+import com.ithwx.personalknowledgebase.index.domain.SearchResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,6 +16,8 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
@@ -56,5 +60,46 @@ class PgVectorKnowledgeIndexTest {
         knowledgeIndex.updateMetadata(1L, "Java", Set.of("数据库"));
 
         verify(jdbcTemplate).update(anyString(), any(), any(), any());
+    }
+
+    @Test
+    void shouldRerankChunkFoundByBothSearchesFirst() {
+        KnowledgeChunk both = chunk(1L, 0, "同时命中");
+        KnowledgeChunk vectorOnly = chunk(2L, 0, "仅向量命中");
+        KnowledgeChunk keywordOnly = chunk(3L, 0, "仅关键词命中");
+
+        List<SearchResult> results = knowledgeIndex.rerank(
+                List.of(both, vectorOnly),
+                List.of(keywordOnly, both)
+        );
+
+        assertEquals(both, results.get(0).chunk());
+        assertEquals(1.0, results.get(0).score());
+        assertEquals(3, results.size());
+    }
+
+    @Test
+    void shouldFilterByCategoryAndTags() {
+        SearchQuery query = new SearchQuery(
+                "Spring", "Java", Set.of("数据库"), 20, 0.55
+        );
+
+        assertTrue(knowledgeIndex.matchesFilters(
+                new KnowledgeChunk(1L, "资料", "note", null, 0,
+                        "正文", "Java", Set.of("Spring", "数据库")),
+                query
+        ));
+        assertFalse(knowledgeIndex.matchesFilters(
+                new KnowledgeChunk(2L, "资料", "note", null, 0,
+                        "正文", "Python", Set.of("数据库")),
+                query
+        ));
+    }
+
+    private KnowledgeChunk chunk(Long documentId, int chunkIndex, String text) {
+        return new KnowledgeChunk(
+                documentId, "资料" + documentId, "note", null,
+                chunkIndex, text, "Java", Set.of("数据库")
+        );
     }
 }

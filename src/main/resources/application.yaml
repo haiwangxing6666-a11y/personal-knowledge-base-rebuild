@@ -44,5 +44,6 @@ app:
     overlap-chars: 50
   rag:
     top-k: 5
+    max-context-chars: 2000
     similarity-threshold: 0.55
     retry-min-hits: 2

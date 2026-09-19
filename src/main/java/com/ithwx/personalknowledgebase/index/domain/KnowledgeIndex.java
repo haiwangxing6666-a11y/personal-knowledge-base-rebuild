@@ -5,6 +5,8 @@ import java.util.Set;
 
 public interface KnowledgeIndex {
 
+    List<SearchResult> search(SearchQuery query);
+
     void replace(Long documentId, List<KnowledgeChunk> chunks);
 
     void updateMetadata(Long documentId, String category, Set<String> tags);
