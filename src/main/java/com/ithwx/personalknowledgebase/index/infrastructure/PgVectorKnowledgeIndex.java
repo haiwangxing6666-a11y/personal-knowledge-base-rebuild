@@ -43,13 +43,7 @@ public class PgVectorKnowledgeIndex implements KnowledgeIndex {
 
     @Override
     public List<KnowledgeChunk> search(SearchQuery query) {
-        List<KnowledgeChunk> vectorResults = vectorSearch(query).stream()
-                .filter(chunk -> matchesFilters(chunk, query))
-                .toList();
-        List<KnowledgeChunk> keywordResults = keywordSearch(query).stream()
-                .filter(chunk -> matchesFilters(chunk, query))
-                .toList();
-        return merge(vectorResults, keywordResults);
+        return merge(vectorSearch(query), keywordSearch(query));
     }
 
     @Override
@@ -125,13 +119,6 @@ public class PgVectorKnowledgeIndex implements KnowledgeIndex {
                 metadata.getOrDefault("category", "").toString(),
                 parseTags(metadata.getOrDefault("tags", "").toString())
         );
-    }
-
-    boolean matchesFilters(KnowledgeChunk chunk, SearchQuery query) {
-        boolean categoryMatches = query.category() == null
-                || query.category().isBlank()
-                || query.category().equals(chunk.category());
-        return categoryMatches && chunk.tags().containsAll(query.tags());
     }
 
     List<KnowledgeChunk> merge(

@@ -1,7 +1,6 @@
 package com.ithwx.personalknowledgebase.index.infrastructure;
 
 import com.ithwx.personalknowledgebase.index.domain.KnowledgeChunk;
-import com.ithwx.personalknowledgebase.index.domain.SearchQuery;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,8 +14,6 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
@@ -75,24 +72,6 @@ class PgVectorKnowledgeIndexTest {
         assertEquals(both, results.get(0));
         assertEquals(keywordOnly, results.get(2));
         assertEquals(3, results.size());
-    }
-
-    @Test
-    void shouldFilterByCategoryAndTags() {
-        SearchQuery query = new SearchQuery(
-                "Spring", "Java", Set.of("数据库"), 20, 0.55
-        );
-
-        assertTrue(knowledgeIndex.matchesFilters(
-                new KnowledgeChunk(1L, "资料", "note", null, 0,
-                        "正文", "Java", Set.of("Spring", "数据库")),
-                query
-        ));
-        assertFalse(knowledgeIndex.matchesFilters(
-                new KnowledgeChunk(2L, "资料", "note", null, 0,
-                        "正文", "Python", Set.of("数据库")),
-                query
-        ));
     }
 
     private KnowledgeChunk chunk(Long documentId, int chunkIndex, String text) {

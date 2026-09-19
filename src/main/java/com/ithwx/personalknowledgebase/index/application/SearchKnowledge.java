@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Service
 public class SearchKnowledge {
@@ -37,10 +36,6 @@ public class SearchKnowledge {
     }
 
     public List<SearchResult> search(String question) {
-        return search(question, null, Set.of());
-    }
-
-    public List<SearchResult> search(String question, String category, Set<String> tags) {
         if (question == null || question.isBlank()) {
             throw new IllegalArgumentException("检索问题不能为空");
         }
@@ -48,8 +43,6 @@ public class SearchKnowledge {
         String normalizedQuestion = question.strip();
         SearchQuery query = new SearchQuery(
                 normalizedQuestion,
-                category,
-                tags,
                 maxResults * CANDIDATE_MULTIPLIER,
                 similarityThreshold
         );

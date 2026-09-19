@@ -33,7 +33,7 @@ class SearchKnowledgeTest {
     private KnowledgeReranker knowledgeReranker;
 
     @Test
-    void shouldPassFiltersAndLimitContext() {
+    void shouldRetrieveRerankAndLimitContext() {
         SearchKnowledge service = new SearchKnowledge(
                 knowledgeIndex, knowledgeReranker, 2, 6, 0.55
         );
@@ -49,15 +49,11 @@ class SearchKnowledgeTest {
                         result(3L, "七八九", 0.7)
         ));
 
-        List<SearchResult> results = service.search(
-                "  Spring 数据库  ", "Java", Set.of("Spring")
-        );
+        List<SearchResult> results = service.search("  Spring 数据库  ");
 
         ArgumentCaptor<SearchQuery> captor = ArgumentCaptor.forClass(SearchQuery.class);
         verify(knowledgeIndex).search(captor.capture());
         assertEquals("Spring 数据库", captor.getValue().text());
-        assertEquals("Java", captor.getValue().category());
-        assertEquals(Set.of("Spring"), captor.getValue().tags());
         assertEquals(4, captor.getValue().candidateLimit());
         assertEquals(2, results.size());
     }
