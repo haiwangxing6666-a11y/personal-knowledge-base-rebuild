@@ -1,55 +1,34 @@
 package com.ithwx.personalknowledgebase.service;
 
 import com.ithwx.personalknowledgebase.dto.RetrievedChunk;
-import org.springframework.ai.document.Document;
-import org.springframework.ai.vectorstore.SearchRequest;
-import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.beans.factory.annotation.Value;
+import com.ithwx.personalknowledgebase.index.application.SearchKnowledge;
+import com.ithwx.personalknowledgebase.index.domain.SearchResult;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class RagRetrievalService {
 
-    private final VectorStore vectorStore;
-    private final int topK;
-    private final double similarityThreshold;
+    private final SearchKnowledge searchKnowledge;
 
-    public RagRetrievalService(
-            VectorStore vectorStore,
-            @Value("${app.rag.top-k}") int topK,
-            @Value("${app.rag.similarity-threshold}") double similarityThreshold
-    ) {
-        this.vectorStore = vectorStore;
-        this.topK = topK;
-        this.similarityThreshold = similarityThreshold;
+    public RagRetrievalService(SearchKnowledge searchKnowledge) {
+        this.searchKnowledge = searchKnowledge;
     }
 
     public List<RetrievedChunk> search(String question) {
-        if (question == null || question.isBlank()) {
-            throw new IllegalArgumentException("检索问题不能为空");
-        }
-
-        SearchRequest request = SearchRequest.builder()
-                .query(question.strip())
-                .topK(topK)
-                .similarityThreshold(similarityThreshold)
-                .build();
-
         List<RetrievedChunk> results = new ArrayList<>();
-        for (Document document : vectorStore.similaritySearch(request)) {
-            Map<String, Object> metadata = document.getMetadata();
+        for (SearchResult result : searchKnowledge.search(question)) {
+            var chunk = result.chunk();
             results.add(new RetrievedChunk(
-                    document.getText(),
-                    Long.valueOf((String) metadata.get("documentId")),
-                    (String) metadata.get("documentName"),
-                    (String) metadata.get("sourceType"),
-                    (String) metadata.get("sourceUrl"),
-                    (Integer) metadata.get("chunkIndex"),
-                    document.getScore()
+                    chunk.text(),
+                    chunk.documentId(),
+                    chunk.documentName(),
+                    chunk.sourceType(),
+                    chunk.sourceUrl(),
+                    chunk.chunkIndex(),
+                    result.score()
             ));
         }
         return results;

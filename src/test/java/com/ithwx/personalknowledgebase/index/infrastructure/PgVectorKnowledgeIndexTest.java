@@ -57,4 +57,27 @@ class PgVectorKnowledgeIndexTest {
 
         verify(jdbcTemplate).update(anyString(), any(), any(), any());
     }
+
+    @Test
+    void shouldMergeAndRemoveDuplicateChunks() {
+        KnowledgeChunk both = chunk(1L, 0, "同时命中");
+        KnowledgeChunk vectorOnly = chunk(2L, 0, "仅向量命中");
+        KnowledgeChunk keywordOnly = chunk(3L, 0, "仅关键词命中");
+
+        List<KnowledgeChunk> results = knowledgeIndex.merge(
+                List.of(both, vectorOnly),
+                List.of(keywordOnly, both)
+        );
+
+        assertEquals(both, results.get(0));
+        assertEquals(keywordOnly, results.get(2));
+        assertEquals(3, results.size());
+    }
+
+    private KnowledgeChunk chunk(Long documentId, int chunkIndex, String text) {
+        return new KnowledgeChunk(
+                documentId, "资料" + documentId, "note", null,
+                chunkIndex, text, "Java", Set.of("数据库")
+        );
+    }
 }
