@@ -1,18 +1,18 @@
-package com.ithwx.personalknowledgebase.service;
+package com.ithwx.personalknowledgebase.index.infrastructure;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Service
-public class ChunkingService {
+@Component
+public class TextChunker {
 
     private final int maxChars;
     private final int overlapChars;
 
-    public ChunkingService(
+    public TextChunker(
             @Value("${app.chunk.max-chars}") int maxChars,
             @Value("${app.chunk.overlap-chars}") int overlapChars
     ) {
@@ -23,7 +23,7 @@ public class ChunkingService {
         this.overlapChars = overlapChars;
     }
 
-    public List<String> chunk(String text) {
+    public List<String> split(String text) {
         if (text == null || text.isBlank()) {
             return List.of();
         }
