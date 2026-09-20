@@ -10,7 +10,8 @@
 - 录入文字笔记和公开网页
 - 文本切分、向量化和 pgvector 存储
 - 资料查询、修改、替换和删除
-- 两阶段检索、无依据拒答和来源追踪
+- 混合检索、模型重排、Agent 按需二次检索、无依据拒答和来源追踪
+- 问答会话保存与刷新恢复
 - 资料管理与知识问答页面
 
 ## 技术栈
@@ -77,7 +78,9 @@ GitHub Actions 会在创建 PR 和更新 `main` 时自动执行相同检查。
 | `POST` | `/api/documents/notes` | 创建笔记 |
 | `POST` | `/api/documents/links` | 收藏网页 |
 | `GET` | `/api/documents` | 查询资料列表 |
+| `GET` | `/api/documents/{id}` | 查询资料详情 |
 | `PUT` | `/api/documents/{id}` | 更新资料或替换文件 |
+| `POST` | `/api/documents/{id}/retry` | 重新处理失败资料 |
 | `DELETE` | `/api/documents/{id}` | 删除资料 |
 | `POST` | `/api/chat` | 知识库问答 |
 | `GET` | `/api/chat/{conversationId}` | 查询会话历史 |
@@ -87,9 +90,8 @@ GitHub Actions 会在创建 PR 和更新 `main` 时自动执行相同检查。
 - [产品需求文档（Issue #1）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/1)
 - [产品架构设计（Issue #2）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/2)
 - [接口与页面模块（Issue #3）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/3)
-- [内容获取模块（Issue #8）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/8)
-- [资料管理模块（Issue #11）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/11)
-- [知识处理模块（Issue #16）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/16)
+- [资料库模块（Issue #55）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/55)
+- [知识索引模块（Issue #60）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/60)
 - [知识问答模块（Issue #67）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/67)
 - [公共支持模块（Issue #24）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/24)
 
