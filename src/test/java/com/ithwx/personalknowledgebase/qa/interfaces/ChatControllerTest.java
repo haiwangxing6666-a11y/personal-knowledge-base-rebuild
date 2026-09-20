@@ -1,8 +1,8 @@
 package com.ithwx.personalknowledgebase.qa.interfaces;
 
-import com.ithwx.personalknowledgebase.dto.RagAnswerResult;
 import com.ithwx.personalknowledgebase.qa.application.ChatAnswer;
 import com.ithwx.personalknowledgebase.qa.application.ChatService;
+import com.ithwx.personalknowledgebase.qa.domain.AnswerSource;
 import com.ithwx.personalknowledgebase.qa.domain.Conversation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,7 +41,8 @@ class ChatControllerTest {
 
     @Test
     void shouldAnswerInsideConversation() throws Exception {
-        RagAnswerResult result = new RagAnswerResult(
+        ChatAnswer result = new ChatAnswer(
+                7L,
                 "项目支持哪些格式？",
                 "支持 TXT、Markdown、PDF 和 DOCX。",
                 false,
@@ -50,7 +51,7 @@ class ChatControllerTest {
                 List.of()
         );
         when(chatService.ask(null, "项目支持哪些格式？"))
-                .thenReturn(ChatAnswer.from(7L, result));
+                .thenReturn(result);
 
         mockMvc.perform(post("/api/chat")
                         .contentType(MediaType.APPLICATION_JSON)

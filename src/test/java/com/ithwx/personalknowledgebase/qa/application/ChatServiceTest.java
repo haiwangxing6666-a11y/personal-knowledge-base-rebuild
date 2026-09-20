@@ -1,11 +1,9 @@
 package com.ithwx.personalknowledgebase.qa.application;
 
-import com.ithwx.personalknowledgebase.dto.RagAnswerResult;
 import com.ithwx.personalknowledgebase.qa.domain.AnswerSource;
 import com.ithwx.personalknowledgebase.qa.domain.Conversation;
 import com.ithwx.personalknowledgebase.qa.domain.ConversationRepository;
 import com.ithwx.personalknowledgebase.qa.domain.MessageRole;
-import com.ithwx.personalknowledgebase.service.RagAnswerService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -27,13 +25,13 @@ class ChatServiceTest {
     @Mock
     private ConversationRepository conversationRepository;
     @Mock
-    private RagAnswerService ragAnswerService;
+    private AnswerQuestion answerQuestion;
 
     @Test
     void shouldCreateConversationAndSaveQuestionAndAnswer() {
-        ChatService service = new ChatService(conversationRepository, ragAnswerService);
-        RagAnswerResult result = result();
-        when(ragAnswerService.answer("支持什么格式？")).thenReturn(result);
+        ChatService service = new ChatService(conversationRepository, answerQuestion);
+        ChatAnswer result = result();
+        when(answerQuestion.answer("支持什么格式？", List.of())).thenReturn(result);
         when(conversationRepository.save(any(Conversation.class)))
                 .thenAnswer(invocation -> {
                     Conversation conversation = invocation.getArgument(0);
@@ -55,11 +53,11 @@ class ChatServiceTest {
 
     @Test
     void shouldContinueExistingConversation() {
-        ChatService service = new ChatService(conversationRepository, ragAnswerService);
+        ChatService service = new ChatService(conversationRepository, answerQuestion);
         Conversation conversation = new Conversation(
                 5L, java.time.LocalDateTime.now(), List.of());
         when(conversationRepository.findById(5L)).thenReturn(Optional.of(conversation));
-        when(ragAnswerService.answer("继续提问")).thenReturn(result());
+        when(answerQuestion.answer("继续提问", List.of())).thenReturn(result());
         when(conversationRepository.save(conversation)).thenReturn(conversation);
 
         ChatAnswer answer = service.ask(5L, "继续提问");
@@ -70,15 +68,16 @@ class ChatServiceTest {
 
     @Test
     void shouldRejectUnknownConversation() {
-        ChatService service = new ChatService(conversationRepository, ragAnswerService);
+        ChatService service = new ChatService(conversationRepository, answerQuestion);
         when(conversationRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(java.util.NoSuchElementException.class,
                 () -> service.getConversation(99L));
     }
 
-    private RagAnswerResult result() {
-        return new RagAnswerResult(
+    private ChatAnswer result() {
+        return new ChatAnswer(
+                null,
                 "支持什么格式？",
                 "支持 TXT。",
                 false,

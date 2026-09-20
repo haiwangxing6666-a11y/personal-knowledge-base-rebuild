@@ -1,9 +1,7 @@
 package com.ithwx.personalknowledgebase.qa.application;
 
-import com.ithwx.personalknowledgebase.dto.RagAnswerResult;
 import com.ithwx.personalknowledgebase.qa.domain.Conversation;
 import com.ithwx.personalknowledgebase.qa.domain.ConversationRepository;
-import com.ithwx.personalknowledgebase.service.RagAnswerService;
 import org.springframework.stereotype.Service;
 
 import java.util.NoSuchElementException;
@@ -12,14 +10,14 @@ import java.util.NoSuchElementException;
 public class ChatService {
 
     private final ConversationRepository conversationRepository;
-    private final RagAnswerService ragAnswerService;
+    private final AnswerQuestion answerQuestion;
 
     public ChatService(
             ConversationRepository conversationRepository,
-            RagAnswerService ragAnswerService
+            AnswerQuestion answerQuestion
     ) {
         this.conversationRepository = conversationRepository;
-        this.ragAnswerService = ragAnswerService;
+        this.answerQuestion = answerQuestion;
     }
 
     public ChatAnswer ask(Long conversationId, String question) {
@@ -27,14 +25,15 @@ public class ChatService {
                 ? Conversation.start()
                 : getConversation(conversationId);
         String normalizedQuestion = question.strip();
-        RagAnswerResult result = ragAnswerService.answer(normalizedQuestion);
+        ChatAnswer result = answerQuestion.answer(
+                normalizedQuestion, conversation.messages());
 
         conversation.addUserMessage(normalizedQuestion);
         conversation.addAssistantMessage(
                 result.answer(), result.refused(), result.sources());
         Conversation saved = conversationRepository.save(conversation);
 
-        return ChatAnswer.from(saved.id(), result);
+        return result.withConversationId(saved.id());
     }
 
     public Conversation getConversation(Long conversationId) {
