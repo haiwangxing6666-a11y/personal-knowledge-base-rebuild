@@ -90,7 +90,7 @@ GitHub Actions 会在创建 PR 和更新 `main` 时自动执行相同检查。
 - [内容获取模块（Issue #8）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/8)
 - [资料管理模块（Issue #11）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/11)
 - [知识处理模块（Issue #16）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/16)
-- [RAG 问答模块（Issue #20）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/20)
+- [知识问答模块（Issue #67）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/67)
 - [公共支持模块（Issue #24）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/24)
 
 ## 密钥安全
