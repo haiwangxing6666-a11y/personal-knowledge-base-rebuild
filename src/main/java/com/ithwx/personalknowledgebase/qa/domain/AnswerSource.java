@@ -1,4 +1,4 @@
-package com.ithwx.personalknowledgebase.dto;
+package com.ithwx.personalknowledgebase.qa.domain;
 
 import java.util.List;
 
@@ -9,4 +9,7 @@ public record AnswerSource(
         String sourceUrl,
         List<Integer> chunkIndexes
 ) {
+    public AnswerSource {
+        chunkIndexes = List.copyOf(chunkIndexes);
+    }
 }

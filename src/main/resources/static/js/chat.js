@@ -2,6 +2,8 @@ const input = document.querySelector("#question-input");
 const form = document.querySelector("#chat-form");
 const messages = document.querySelector("#messages");
 const sendButton = document.querySelector("#send-button");
+const conversationKey = "knowledge-island-conversation-id";
+let conversationId = Number(localStorage.getItem(conversationKey)) || null;
 
 document.querySelectorAll("[data-question]").forEach(button => {
     button.addEventListener("click", () => {
@@ -19,10 +21,13 @@ input.addEventListener("keydown", event => {
     }
 });
 document.querySelector("#clear-chat").addEventListener("click", () => {
+    conversationId = null;
+    localStorage.removeItem(conversationKey);
     messages.replaceChildren(createEmptyState());
 });
 form.addEventListener("submit", askQuestion);
 checkHealth();
+loadConversation();
 
 async function askQuestion(event) {
     event.preventDefault();
@@ -40,8 +45,10 @@ async function askQuestion(event) {
         const result = await request("/api/chat", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({question})
+            body: JSON.stringify({conversationId, question})
         });
+        conversationId = result.conversationId;
+        localStorage.setItem(conversationKey, conversationId);
         loading.remove();
         appendAnswer(result);
     } catch (error) {
@@ -93,17 +100,46 @@ function appendAnswer(result) {
         content.append(trace);
     }
 
-    if (result.sources.length > 0) {
+    appendSources(message, result.sources);
+}
+
+function appendSources(message, sources) {
+    if (sources.length > 0) {
+        const content = message.querySelector(".message-content");
         const block = document.createElement("section");
         block.className = "sources-block";
         const title = document.createElement("div");
         title.className = "sources-title";
-        title.textContent = `◎ 回答来源 · ${result.sources.length}`;
+        title.textContent = `◎ 回答来源 · ${sources.length}`;
         const list = document.createElement("div");
         list.className = "source-list";
-        result.sources.forEach(source => list.append(createSource(source)));
+        sources.forEach(source => list.append(createSource(source)));
         block.append(title, list);
         content.append(block);
+    }
+}
+
+async function loadConversation() {
+    if (!conversationId) return;
+
+    try {
+        const conversation = await request(`/api/chat/${conversationId}`);
+        messages.replaceChildren();
+        conversation.messages.forEach(message => {
+            if (message.role === "user") {
+                appendUserMessage(message.content);
+                return;
+            }
+            const element = appendAssistantMessage(message.content, true);
+            if (message.refused) element.classList.add("refused");
+            appendSources(element, message.sources);
+        });
+        if (conversation.messages.length === 0) {
+            messages.append(createEmptyState());
+        }
+    } catch {
+        conversationId = null;
+        localStorage.removeItem(conversationKey);
     }
 }
 

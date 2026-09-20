@@ -1,9 +1,9 @@
 package com.ithwx.personalknowledgebase.service;
 
-import com.ithwx.personalknowledgebase.dto.AnswerSource;
 import com.ithwx.personalknowledgebase.dto.RagAnswerResult;
 import com.ithwx.personalknowledgebase.dto.RetrievedChunk;
 import com.ithwx.personalknowledgebase.dto.TwoStageRetrievalResult;
+import com.ithwx.personalknowledgebase.qa.domain.AnswerSource;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.stereotype.Service;
 

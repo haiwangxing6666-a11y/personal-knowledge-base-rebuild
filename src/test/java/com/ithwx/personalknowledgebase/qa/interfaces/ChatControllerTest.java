@@ -1,7 +1,9 @@
-package com.ithwx.personalknowledgebase.controller;
+package com.ithwx.personalknowledgebase.qa.interfaces;
 
 import com.ithwx.personalknowledgebase.dto.RagAnswerResult;
-import com.ithwx.personalknowledgebase.service.RagAnswerService;
+import com.ithwx.personalknowledgebase.qa.application.ChatAnswer;
+import com.ithwx.personalknowledgebase.qa.application.ChatService;
+import com.ithwx.personalknowledgebase.qa.domain.Conversation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,11 +13,13 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -24,28 +28,29 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ChatControllerTest {
 
     @Mock
-    private RagAnswerService ragAnswerService;
+    private ChatService chatService;
 
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new ChatController(ragAnswerService))
+                .standaloneSetup(new ChatController(chatService))
                 .build();
     }
 
     @Test
-    void shouldReturnRagAnswer() throws Exception {
+    void shouldAnswerInsideConversation() throws Exception {
         RagAnswerResult result = new RagAnswerResult(
                 "项目支持哪些格式？",
-                "支持 TXT、Markdown、PDF 和 DOCX。[证据 1]",
+                "支持 TXT、Markdown、PDF 和 DOCX。",
                 false,
                 null,
                 false,
                 List.of()
         );
-        when(ragAnswerService.answer("项目支持哪些格式？")).thenReturn(result);
+        when(chatService.ask(null, "项目支持哪些格式？"))
+                .thenReturn(ChatAnswer.from(7L, result));
 
         mockMvc.perform(post("/api/chat")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -53,10 +58,26 @@ class ChatControllerTest {
                                 {"question":"项目支持哪些格式？"}
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.answer").value("支持 TXT、Markdown、PDF 和 DOCX。[证据 1]"))
-                .andExpect(jsonPath("$.refused").value(false));
+                .andExpect(jsonPath("$.conversationId").value(7))
+                .andExpect(jsonPath("$.answer")
+                        .value("支持 TXT、Markdown、PDF 和 DOCX。"));
 
-        verify(ragAnswerService).answer("项目支持哪些格式？");
+        verify(chatService).ask(null, "项目支持哪些格式？");
+    }
+
+    @Test
+    void shouldReturnConversationHistory() throws Exception {
+        Conversation conversation = new Conversation(
+                7L, LocalDateTime.now(), List.of());
+        conversation.addUserMessage("历史问题");
+        conversation.addAssistantMessage("历史回答", false, List.of());
+        when(chatService.getConversation(7L)).thenReturn(conversation);
+
+        mockMvc.perform(get("/api/chat/7"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(7))
+                .andExpect(jsonPath("$.messages[0].role").value("user"))
+                .andExpect(jsonPath("$.messages[1].content").value("历史回答"));
     }
 
     @Test
@@ -68,6 +89,6 @@ class ChatControllerTest {
                                 """))
                 .andExpect(status().isBadRequest());
 
-        verifyNoInteractions(ragAnswerService);
+        verifyNoInteractions(chatService);
     }
 }
