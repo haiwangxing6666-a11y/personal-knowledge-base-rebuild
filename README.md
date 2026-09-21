@@ -10,7 +10,8 @@
 - 录入文字笔记和公开网页
 - 文本切分、向量化和 pgvector 存储
 - 资料查询、修改、替换和删除
-- 两阶段检索、无依据拒答和来源追踪
+- 混合检索、模型重排、Agent 按需二次检索、无依据拒答和来源追踪
+- 问答会话保存与刷新恢复
 - 资料管理与知识问答页面
 
 ## 技术栈
@@ -18,7 +19,7 @@
 - Java 17、Spring Boot、Maven
 - PostgreSQL、pgvector、Spring Data JPA
 - Spring AI
-- HTML、CSS、JavaScript
+- Vue 3、Vite、HTML、CSS、JavaScript
 - Docker Compose、GitHub Actions
 
 ## Docker 运行
@@ -39,7 +40,7 @@ docker compose up --build
 
 ## 本地运行
 
-需要 Java 17、Maven 和 PostgreSQL。先创建数据库：
+需要 Java 17、Maven、Node.js 24 和 PostgreSQL。先创建数据库：
 
 ```sql
 CREATE DATABASE personal_knowledge_base_rebuild;
@@ -55,6 +56,10 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 ```powershell
 Copy-Item .env.example .env
+cd frontend
+npm ci
+npm run build
+cd ..
 mvn spring-boot:run
 ```
 
@@ -63,10 +68,14 @@ mvn spring-boot:run
 ## 测试和打包
 
 ```powershell
+cd frontend
+npm ci
+npm run build
+cd ..
 mvn verify
 ```
 
-GitHub Actions 会在创建 PR 和更新 `main` 时自动执行相同检查。
+前端开发时也可以在 `frontend` 目录运行 `npm run dev`，然后访问 <http://localhost:5173>；Vite 会把 `/api` 请求转发到 8080 端口的 Spring Boot。GitHub Actions 会在创建 PR 和更新 `main` 时自动构建前端并执行后端测试。
 
 ## 主要接口
 
@@ -77,7 +86,9 @@ GitHub Actions 会在创建 PR 和更新 `main` 时自动执行相同检查。
 | `POST` | `/api/documents/notes` | 创建笔记 |
 | `POST` | `/api/documents/links` | 收藏网页 |
 | `GET` | `/api/documents` | 查询资料列表 |
+| `GET` | `/api/documents/{id}` | 查询资料详情 |
 | `PUT` | `/api/documents/{id}` | 更新资料或替换文件 |
+| `POST` | `/api/documents/{id}/retry` | 重新处理失败资料 |
 | `DELETE` | `/api/documents/{id}` | 删除资料 |
 | `POST` | `/api/chat` | 知识库问答 |
 | `GET` | `/api/chat/{conversationId}` | 查询会话历史 |
@@ -87,9 +98,8 @@ GitHub Actions 会在创建 PR 和更新 `main` 时自动执行相同检查。
 - [产品需求文档（Issue #1）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/1)
 - [产品架构设计（Issue #2）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/2)
 - [接口与页面模块（Issue #3）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/3)
-- [内容获取模块（Issue #8）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/8)
-- [资料管理模块（Issue #11）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/11)
-- [知识处理模块（Issue #16）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/16)
+- [资料库模块（Issue #55）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/55)
+- [知识索引模块（Issue #60）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/60)
 - [知识问答模块（Issue #67）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/67)
 - [公共支持模块（Issue #24）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/24)
 

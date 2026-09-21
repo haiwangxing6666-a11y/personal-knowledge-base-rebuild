@@ -26,6 +26,10 @@ replay_pid*
 # Maven build output
 target/
 
+# Vue build output
+frontend/node_modules/
+frontend/dist/
+
 # IntelliJ IDEA
 .idea/
 *.iml
