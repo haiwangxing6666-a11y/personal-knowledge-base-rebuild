@@ -19,7 +19,7 @@
 - Java 17、Spring Boot、Maven
 - PostgreSQL、pgvector、Spring Data JPA
 - Spring AI
-- HTML、CSS、JavaScript
+- Vue 3、Vite、HTML、CSS、JavaScript
 - Docker Compose、GitHub Actions
 
 ## Docker 运行
@@ -40,7 +40,7 @@ docker compose up --build
 
 ## 本地运行
 
-需要 Java 17、Maven 和 PostgreSQL。先创建数据库：
+需要 Java 17、Maven、Node.js 24 和 PostgreSQL。先创建数据库：
 
 ```sql
 CREATE DATABASE personal_knowledge_base_rebuild;
@@ -56,6 +56,10 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 ```powershell
 Copy-Item .env.example .env
+cd frontend
+npm ci
+npm run build
+cd ..
 mvn spring-boot:run
 ```
 
@@ -64,10 +68,14 @@ mvn spring-boot:run
 ## 测试和打包
 
 ```powershell
+cd frontend
+npm ci
+npm run build
+cd ..
 mvn verify
 ```
 
-GitHub Actions 会在创建 PR 和更新 `main` 时自动执行相同检查。
+前端开发时也可以在 `frontend` 目录运行 `npm run dev`，然后访问 <http://localhost:5173>；Vite 会把 `/api` 请求转发到 8080 端口的 Spring Boot。GitHub Actions 会在创建 PR 和更新 `main` 时自动构建前端并执行后端测试。
 
 ## 主要接口
 
