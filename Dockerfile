@@ -1,10 +1,8 @@
 FROM node:24-alpine AS frontend-build
 
 WORKDIR /frontend
-COPY frontend/package*.json ./
-RUN --mount=type=cache,target=/root/.npm npm ci
 COPY frontend ./
-RUN npm run build
+RUN --mount=type=cache,target=/root/.npm npm ci --include=dev --include=optional --no-audit --no-fund && npm run build
 
 FROM maven:3.9-eclipse-temurin-17 AS build
 
