@@ -14,6 +14,15 @@
 - 问答会话保存与刷新恢复
 - 资料管理与知识问答页面
 
+## 核心流程
+
+```text
+上传资料 → 后台解析与验重 → 文本切分 → 建立索引 → 资料变为 READY
+
+用户提问 → 混合检索 → 模型重排 → Agent 判断证据
+        → 必要时改写问题并再次检索 → 回答或拒答 → 保存会话
+```
+
 ## 技术栈
 
 - Java 17、Spring Boot、Maven
@@ -26,8 +35,16 @@
 
 需要先安装并启动 Docker Desktop。
 
+Windows PowerShell：
+
 ```powershell
 Copy-Item .env.example .env
+```
+
+Linux、macOS 或 WSL：
+
+```bash
+cp .env.example .env
 ```
 
 编辑 `.env`，填写数据库密码和 `SILICONFLOW_API_KEY`，然后运行：
@@ -36,7 +53,7 @@ Copy-Item .env.example .env
 docker compose up --build
 ```
 
-打开 <http://localhost:8080>。数据库数据保存在 Docker volume 中，执行 `docker compose down` 后不会丢失。
+打开 <http://localhost:8080>。数据库保存在 `postgres-data`，上传的原文件保存在 `document-files`；执行 `docker compose down` 后数据不会丢失。
 
 ## 本地运行
 
@@ -50,12 +67,24 @@ CREATE DATABASE personal_knowledge_base_rebuild;
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 ```
 
-复制并填写环境变量：
+复制环境变量文件。Windows PowerShell：
 
 ```powershell
 Copy-Item .env.example .env
+```
+
+Linux、macOS 或 WSL：
+
+```bash
+cp .env.example .env
+```
+
+填写 `.env` 后，构建前端并启动后端：
+
+```powershell
 cd frontend
 npm ci
 npm run build
@@ -97,11 +126,11 @@ mvn verify
 
 - [产品需求文档（Issue #1）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/1)
 - [产品架构设计（Issue #2）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/2)
-- [接口与页面模块（Issue #3）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/3)
 - [资料库模块（Issue #55）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/55)
 - [知识索引模块（Issue #60）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/60)
 - [知识问答模块（Issue #67）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/67)
-- [公共支持模块（Issue #24）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/24)
+- [Vue 前端（Issue #74）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/74)
+- [工程支持（Issue #24）](https://github.com/haiwangxing6666-a11y/personal-knowledge-base-rebuild/issues/24)
 
 ## 密钥安全
 
