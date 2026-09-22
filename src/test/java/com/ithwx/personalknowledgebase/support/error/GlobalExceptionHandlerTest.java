@@ -1,6 +1,4 @@
-package com.ithwx.personalknowledgebase.exception;
-
-import com.ithwx.personalknowledgebase.dto.ApiErrorResponse;
+package com.ithwx.personalknowledgebase.support.error;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

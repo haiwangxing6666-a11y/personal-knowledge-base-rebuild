@@ -1,6 +1,4 @@
-package com.ithwx.personalknowledgebase.exception;
-
-import com.ithwx.personalknowledgebase.dto.ApiErrorResponse;
+package com.ithwx.personalknowledgebase.support.error;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
