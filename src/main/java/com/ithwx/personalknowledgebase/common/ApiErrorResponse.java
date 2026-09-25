@@ -1,4 +1,4 @@
-package com.ithwx.personalknowledgebase.support.error;
+package com.ithwx.personalknowledgebase.common;
 
 import java.time.Instant;
 import java.util.Map;

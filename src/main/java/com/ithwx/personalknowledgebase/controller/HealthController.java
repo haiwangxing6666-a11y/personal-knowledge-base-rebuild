@@ -1,4 +1,6 @@
-package com.ithwx.personalknowledgebase.support.web;
+package com.ithwx.personalknowledgebase.controller;
+
+import com.ithwx.personalknowledgebase.controller.dto.HealthResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

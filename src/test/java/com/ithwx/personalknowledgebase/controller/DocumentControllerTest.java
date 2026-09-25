@@ -1,6 +1,6 @@
-package com.ithwx.personalknowledgebase.library.interfaces;
+package com.ithwx.personalknowledgebase.controller;
 
-import com.ithwx.personalknowledgebase.support.error.GlobalExceptionHandler;
+import com.ithwx.personalknowledgebase.common.GlobalExceptionHandler;
 import com.ithwx.personalknowledgebase.library.application.DocumentService;
 import com.ithwx.personalknowledgebase.library.domain.Document;
 import org.junit.jupiter.api.BeforeEach;

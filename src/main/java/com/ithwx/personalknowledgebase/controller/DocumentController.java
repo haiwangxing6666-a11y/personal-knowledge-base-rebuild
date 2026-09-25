@@ -1,11 +1,11 @@
-package com.ithwx.personalknowledgebase.library.interfaces;
+package com.ithwx.personalknowledgebase.controller;
 
 import com.ithwx.personalknowledgebase.library.application.DocumentService;
-import com.ithwx.personalknowledgebase.library.interfaces.dto.DocumentDetailResponse;
-import com.ithwx.personalknowledgebase.library.interfaces.dto.DocumentResponse;
-import com.ithwx.personalknowledgebase.library.interfaces.dto.DocumentUpdateRequest;
-import com.ithwx.personalknowledgebase.library.interfaces.dto.LinkCreateRequest;
-import com.ithwx.personalknowledgebase.library.interfaces.dto.NoteCreateRequest;
+import com.ithwx.personalknowledgebase.controller.dto.DocumentDetailResponse;
+import com.ithwx.personalknowledgebase.controller.dto.DocumentResponse;
+import com.ithwx.personalknowledgebase.controller.dto.DocumentUpdateRequest;
+import com.ithwx.personalknowledgebase.controller.dto.LinkCreateRequest;
+import com.ithwx.personalknowledgebase.controller.dto.NoteCreateRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;

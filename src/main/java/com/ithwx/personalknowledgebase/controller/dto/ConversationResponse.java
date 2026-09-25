@@ -1,4 +1,4 @@
-package com.ithwx.personalknowledgebase.qa.interfaces.dto;
+package com.ithwx.personalknowledgebase.controller.dto;
 
 import com.ithwx.personalknowledgebase.qa.domain.AnswerSource;
 import com.ithwx.personalknowledgebase.qa.domain.ChatMessage;

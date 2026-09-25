@@ -1,9 +1,9 @@
-package com.ithwx.personalknowledgebase.qa.interfaces;
+package com.ithwx.personalknowledgebase.controller;
 
 import com.ithwx.personalknowledgebase.qa.application.ChatAnswer;
 import com.ithwx.personalknowledgebase.qa.application.ChatService;
-import com.ithwx.personalknowledgebase.qa.interfaces.dto.ChatRequest;
-import com.ithwx.personalknowledgebase.qa.interfaces.dto.ConversationResponse;
+import com.ithwx.personalknowledgebase.controller.dto.ChatRequest;
+import com.ithwx.personalknowledgebase.controller.dto.ConversationResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
