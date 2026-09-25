@@ -42,8 +42,7 @@ class ProcessDocument {
 
     void process(Long documentId) {
         Document document = requiredDocument(documentId);
-        document.setStatus(DocumentStatus.PROCESSING.name());
-        document.setFailureReason(null);
+        document.startProcessing();
         document = repository.save(document);
 
         try {
@@ -72,11 +71,10 @@ class ProcessDocument {
 
     Document retry(Long id) {
         Document document = requiredDocument(id);
-        if (!DocumentStatus.FAILED.name().equals(document.getStatus())) {
+        if (!document.canRetry()) {
             throw new IllegalArgumentException("只有处理失败的资料可以重试");
         }
-        document.setStatus(DocumentStatus.PENDING.name());
-        document.setFailureReason(null);
+        document.prepareForProcessing();
         Document saved = repository.save(document);
         processAsync(saved.getId());
         return saved;
@@ -84,9 +82,7 @@ class ProcessDocument {
 
     void markReady(Long id, int chunkCount) {
         Document document = requiredDocument(id);
-        document.setStatus(DocumentStatus.READY.name());
-        document.setChunkCount(chunkCount);
-        document.setFailureReason(null);
+        document.markReady(chunkCount);
         repository.save(document);
     }
 
@@ -111,8 +107,7 @@ class ProcessDocument {
     }
 
     private void fail(Document document, String reason) {
-        document.setStatus(DocumentStatus.FAILED.name());
-        document.setFailureReason(shortReason(reason));
+        document.markFailed(shortReason(reason));
         repository.save(document);
     }
 
