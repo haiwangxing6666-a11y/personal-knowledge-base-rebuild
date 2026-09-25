@@ -1,14 +1,24 @@
 package com.ithwx.personalknowledgebase.library.application;
 
 import com.ithwx.personalknowledgebase.library.domain.Document;
+import com.ithwx.personalknowledgebase.library.domain.DocumentDeleted;
+import com.ithwx.personalknowledgebase.library.domain.DocumentRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
+import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -16,31 +26,122 @@ import static org.mockito.Mockito.when;
 class DocumentServiceTest {
 
     @Mock
-    private SubmitDocument submitDocument;
+    private DocumentRepository repository;
+    @Mock
+    private FileStorage fileStorage;
     @Mock
     private ProcessDocument processDocument;
     @Mock
-    private ManageDocument manageDocument;
+    private ApplicationEventPublisher eventPublisher;
+
+    private DocumentService service;
+    private Document existingDocument;
+
+    @BeforeEach
+    void setUp() {
+        service = new DocumentService(
+                repository, fileStorage, processDocument, eventPublisher);
+        existingDocument = new Document();
+        existingDocument.setId(1L);
+    }
 
     @Test
-    void shouldBeTheOnlyFacadeForDocumentOperations() throws Exception {
-        Document document = new Document();
-        DocumentService service = new DocumentService(
-                submitDocument, processDocument, manageDocument);
+    void shouldSaveFileAsPendingBeforeProcessing() throws Exception {
+        stubSavingWithId();
         byte[] content = "正文".getBytes();
+        when(fileStorage.save("笔记.TXT", content)).thenReturn("saved.txt");
 
-        when(submitDocument.file("笔记.txt", content))
-                .thenReturn(document);
-        when(manageDocument.list()).thenReturn(List.of(document));
-        when(processDocument.retry(1L)).thenReturn(document);
+        Document result = service.submitFile("笔记.TXT", content);
 
-        assertSame(document, service.submitFile("笔记.txt", content));
-        assertSame(document, service.list().get(0));
-        assertSame(document, service.retry(1L));
+        assertEquals("PENDING", result.getStatus());
+        assertEquals("txt", result.getFileType());
+        assertEquals("saved.txt", result.getFilePath());
+        verify(processDocument).processAsync(1L);
+    }
 
+    @Test
+    void shouldSaveNoteAndWebAddressWithoutWaitingForExtraction() {
+        stubSavingWithId();
+        Document note = service.createNote("学习笔记", "正文");
+        Document web = service.collectWebPage("https://example.com", null);
+
+        assertEquals("正文", note.getContent());
+        assertEquals("PENDING", note.getStatus());
+        assertEquals("https://example.com", web.getSourceUrl());
+        assertEquals("PENDING", web.getStatus());
+    }
+
+    @Test
+    void shouldListAndGetDocuments() {
+        when(repository.listNewestFirst()).thenReturn(List.of(existingDocument));
+        when(repository.findById(1L)).thenReturn(Optional.of(existingDocument));
+
+        assertSame(existingDocument, service.list().get(0));
+        assertSame(existingDocument, service.get(1L));
+    }
+
+    @Test
+    void shouldUpdateContentAndStartProcessing() {
+        stubSavingWithId();
+        when(repository.findById(1L)).thenReturn(Optional.of(existingDocument));
+
+        service.update(1L, "新名称", "新正文");
+
+        assertEquals("PENDING", existingDocument.getStatus());
+        assertEquals("新名称", existingDocument.getName());
+        assertEquals("新正文", existingDocument.getContent());
+        verify(processDocument).processAsync(1L);
+    }
+
+    @Test
+    void shouldReplaceFileAndResetPreviousSource() throws Exception {
+        stubSavingWithId();
+        byte[] content = "替换正文".getBytes();
+        existingDocument.setSourceUrl("https://example.com/old");
+        existingDocument.setContent("旧正文");
+        when(repository.findById(1L)).thenReturn(Optional.of(existingDocument));
+        when(fileStorage.save("新版.PDF", content)).thenReturn("new.pdf");
+
+        service.replaceFile(1L, "新版.PDF", content);
+
+        assertEquals("pdf", existingDocument.getFileType());
+        assertEquals("new.pdf", existingDocument.getFilePath());
+        assertEquals("PENDING", existingDocument.getStatus());
+        assertNull(existingDocument.getSourceUrl());
+        assertNull(existingDocument.getContent());
+        verify(processDocument).processAsync(1L);
+    }
+
+    @Test
+    void shouldDeleteBeforePublishingEvent() {
+        when(repository.findById(1L)).thenReturn(Optional.of(existingDocument));
+
+        service.delete(1L);
+
+        InOrder order = inOrder(repository, eventPublisher);
+        order.verify(repository).delete(existingDocument);
+        order.verify(eventPublisher).publishEvent(new DocumentDeleted(1L));
+    }
+
+    @Test
+    void shouldDelegateRetryAndIndexResultToAsyncProcessor() {
+        when(processDocument.retry(1L)).thenReturn(existingDocument);
+
+        assertSame(existingDocument, service.retry(1L));
         service.markReady(1L, 2);
         service.markFailed(1L, "失败");
+
         verify(processDocument).markReady(1L, 2);
         verify(processDocument).markFailed(1L, "失败");
+    }
+
+    private void stubSavingWithId() {
+        when(repository.save(any(Document.class))).thenAnswer(invocation -> {
+            Document document = invocation.getArgument(0);
+            if (document.getId() == null) {
+                document.setId(1L);
+            }
+            return document;
+        });
     }
 }
