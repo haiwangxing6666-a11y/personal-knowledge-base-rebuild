@@ -3,7 +3,6 @@ package com.ithwx.personalknowledgebase.library.application;
 import com.ithwx.personalknowledgebase.library.domain.Document;
 import com.ithwx.personalknowledgebase.library.domain.DocumentDeleted;
 import com.ithwx.personalknowledgebase.library.domain.DocumentRepository;
-import com.ithwx.personalknowledgebase.library.domain.DocumentStatus;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
@@ -115,8 +114,7 @@ public class DocumentService {
         Document document = new Document();
         document.setName(name.strip());
         document.setFileType(type);
-        document.setStatus(DocumentStatus.PENDING.name());
-        document.setChunkCount(0);
+        document.prepareForProcessing();
         return document;
     }
 
@@ -132,10 +130,7 @@ public class DocumentService {
     }
 
     private void resetProcessingState(Document document) {
-        document.setContentHash(null);
-        document.setStatus(DocumentStatus.PENDING.name());
-        document.setChunkCount(0);
-        document.setFailureReason(null);
+        document.prepareForProcessing();
     }
 
     private void requireContent(byte[] content) {
