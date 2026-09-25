@@ -1,4 +1,4 @@
-package com.ithwx.personalknowledgebase.library.interfaces.dto;
+package com.ithwx.personalknowledgebase.controller.dto;
 
 import com.ithwx.personalknowledgebase.library.domain.Document;
 

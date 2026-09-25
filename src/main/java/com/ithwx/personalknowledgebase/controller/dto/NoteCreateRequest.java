@@ -1,4 +1,4 @@
-package com.ithwx.personalknowledgebase.library.interfaces.dto;
+package com.ithwx.personalknowledgebase.controller.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

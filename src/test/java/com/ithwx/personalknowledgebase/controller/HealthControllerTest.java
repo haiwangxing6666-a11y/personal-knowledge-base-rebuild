@@ -1,4 +1,6 @@
-package com.ithwx.personalknowledgebase.support.web;
+package com.ithwx.personalknowledgebase.controller;
+
+import com.ithwx.personalknowledgebase.controller.dto.HealthResponse;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

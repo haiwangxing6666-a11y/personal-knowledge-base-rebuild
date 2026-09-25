@@ -1,4 +1,4 @@
-package com.ithwx.personalknowledgebase.qa.interfaces;
+package com.ithwx.personalknowledgebase.controller;
 
 import com.ithwx.personalknowledgebase.qa.application.ChatAnswer;
 import com.ithwx.personalknowledgebase.qa.application.ChatService;

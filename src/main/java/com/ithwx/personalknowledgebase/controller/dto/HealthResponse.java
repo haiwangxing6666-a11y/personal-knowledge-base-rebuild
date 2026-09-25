@@ -1,4 +1,4 @@
-package com.ithwx.personalknowledgebase.support.web;
+package com.ithwx.personalknowledgebase.controller.dto;
 
 public record HealthResponse(
         String status,
