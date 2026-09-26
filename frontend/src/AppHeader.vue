@@ -7,6 +7,7 @@
         <nav class="nav-tabs" aria-label="主要导航">
             <a class="nav-link" :class="{active: currentPage === 'library'}" href="/">资料管理</a>
             <a class="nav-link" :class="{active: currentPage === 'chat'}" href="/chat.html">知识问答</a>
+            <a class="nav-link" :class="{active: currentPage === 'practice'}" href="/practice.html">自测练习</a>
         </nav>
         <div class="service-state" :class="{online: healthOnline}" title="后端服务状态">
             <span class="status-dot"></span>

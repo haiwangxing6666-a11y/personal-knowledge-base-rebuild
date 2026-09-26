@@ -6,7 +6,7 @@
             <section class="hero" aria-labelledby="page-title">
                 <div class="hero-copy">
                     <p class="eyebrow">YOUR SECOND BRAIN</p>
-                    <h1 id="page-title">把散落的知识，<br><span>收进一座岛屿。</span></h1>
+                    <h1 id="page-title">把散落的知识<br><span>收进一座岛屿</span></h1>
                     <p class="hero-description">上传文档、记录灵感、收藏网页。系统会自动解析、切分并建立向量索引，为之后的知识库问答做好准备。</p>
                 </div>
                 <div class="stats-panel" aria-label="知识库统计">

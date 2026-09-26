@@ -5,7 +5,7 @@
         <main class="chat-layout">
             <aside class="chat-sidebar">
                 <div class="sidebar-heading">
-                    <p class="eyebrow">ASK YOUR LIBRARY</p><h1>与知识<br>重新相遇。</h1>
+                    <p class="eyebrow">ASK YOUR LIBRARY</p><h1>与知识<br>重新相遇</h1>
                     <p>回答只来自你的资料，并附上可以追溯的来源。</p>
                 </div>
                 <div class="sidebar-note"><span>◎</span><div><strong>基于证据回答</strong><p>找不到可靠内容时，知屿会明确拒答，不会凭空编造。</p></div></div>

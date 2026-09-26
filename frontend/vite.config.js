@@ -10,7 +10,8 @@ export default defineConfig({
         rollupOptions: {
             input: {
                 library: fileURLToPath(new URL("./index.html", import.meta.url)),
-                chat: fileURLToPath(new URL("./chat.html", import.meta.url))
+                chat: fileURLToPath(new URL("./chat.html", import.meta.url)),
+                practice: fileURLToPath(new URL("./practice.html", import.meta.url))
             }
         }
     },
